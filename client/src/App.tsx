@@ -192,12 +192,10 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                             className={['group flex items-center gap-2.5 rounded-xl px-2 py-2 w-full text-left transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500',
                                 isActive ? 'bg-violet-600/20 text-white' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'].join(' ')}>
                             <div className="relative shrink-0">
-                                <button type="button"
-                                    onClick={(e) => { e.stopPropagation(); setViewingUserId(friend.userId); }}
-                                    aria-label={`View ${name}'s profile`}
-                                        isActive ? 'bg-gradient-to-br from-violet-500 to-violet-700 text-white scale-105' : 'bg-zinc-700 text-zinc-300'].join(' ')}>
+                                <div className={['h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold select-none transition-all duration-200',
+                                    isActive ? 'bg-gradient-to-br from-violet-500 to-violet-700 text-white scale-105' : 'bg-zinc-700 text-zinc-300'].join(' ')}>
                                     {name.charAt(0).toUpperCase()}
-                                </button>
+                                </div>
                                 <span aria-hidden="true" className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-900 presence-dot ${statusColor(friend.onlineStatus)}`} />
                             </div>
                             <div className="min-w-0 flex-1">
@@ -208,6 +206,17 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                             </div>
                             {unread > 0 && !isActive && (
                                 <span className="shrink-0 min-w-[18px] px-1 h-[18px] rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">{unread > 99 ? '99+' : unread}</span>
+                            )}
+                            {/* View profile button — appears on hover */}
+                            {unread === 0 && (
+                                <button type="button"
+                                    onClick={(e) => { e.stopPropagation(); setViewingUserId(friend.userId); }}
+                                    aria-label={`View ${name}'s profile`}
+                                    className="opacity-0 group-hover:opacity-100 shrink-0 h-6 w-6 rounded-md bg-zinc-700 hover:bg-zinc-600 flex items-center justify-center transition-all">
+                                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3 text-zinc-300">
+                                        <path fillRule="evenodd" d="M15 8A7 7 0 111 8a7 7 0 0114 0zm-6-3.5a1 1 0 11-2 0 1 1 0 012 0zM7.25 6.5a.75.75 0 000 1.5h.25v2.25h-.25a.75.75 0 000 1.5h2a.75.75 0 000-1.5H9V7.25a.75.75 0 00-.75-.75h-1z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
                             )}
                             {friend.onlineStatus === 'online' && webrtc.callStatus === 'idle' && unread === 0 && (
                                 <div className="opacity-0 group-hover:opacity-100 shrink-0 flex gap-1">
