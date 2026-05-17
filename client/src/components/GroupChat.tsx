@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Socket } from 'socket.io-client';
 import { useGroupMessages } from '../hooks/useGroupMessages';
+import { getGroupMembers, addGroupMember, type GroupMember } from '../api/groups';
+import { getFriends } from '../api/users';
 import type { Group } from '../api/groups';
 
 interface GroupChatProps {
@@ -12,14 +14,37 @@ interface GroupChatProps {
 
 export const GroupChat: React.FC<GroupChatProps> = ({ socket, userId, group, onBack }) => {
     const { messages, isLoading, hasMore, loadMore, sendMessage, sendImage } = useGroupMessages(socket, group.id, userId);
-    const [draft, setDraft]   = useState('');
-    const listRef             = useRef<HTMLDivElement>(null);
-    const imageInputRef       = useRef<HTMLInputElement>(null);
+    const [draft, setDraft]           = useState('');
+    const [showMembers, setShowMembers] = useState(false);
+    const [members, setMembers]       = useState<GroupMember[]>([]);
+    const [addingId, setAddingId]     = useState<number | null>(null);
+    const [friends, setFriends]       = useState<{ id: number; display_name: string; username: string }[]>([]);
+    const listRef                     = useRef<HTMLDivElement>(null);
+    const imageInputRef               = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const el = listRef.current;
         if (el) el.scrollTop = el.scrollHeight;
     }, [messages.length]);
+
+    const openMembers = async () => {
+        const [m, f] = await Promise.all([getGroupMembers(group.id), getFriends()]);
+        setMembers(m);
+        setFriends(f);
+        setShowMembers(true);
+    };
+
+    const handleAddMember = async (friendId: number) => {
+        setAddingId(friendId);
+        try {
+            await addGroupMember(group.id, friendId);
+            const m = await getGroupMembers(group.id);
+            setMembers(m);
+        } catch { /* ignore */ }
+        finally { setAddingId(null); }
+    };
+
+    const memberIds = new Set(members.map((m) => m.id));
 
     return (
         <div className="flex-1 flex flex-col min-w-0">
@@ -31,11 +56,56 @@ export const GroupChat: React.FC<GroupChatProps> = ({ socket, userId, group, onB
                 <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-fuchsia-600 to-violet-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
                     {group.name.charAt(0).toUpperCase()}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-white truncate">{group.name}</p>
                     <p className="text-[10px] text-zinc-500">{group.member_count} members</p>
                 </div>
+                {/* Add member button */}
+                <button type="button" onClick={openMembers} aria-label="Manage members"
+                    className="h-8 w-8 rounded-xl flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors shrink-0">
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path d="M11 5a3 3 0 11-6 0 3 3 0 016 0zM2.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 018 18a9.953 9.953 0 01-5.385-1.572zM16.25 5.75a.75.75 0 00-1.5 0v2h-2a.75.75 0 000 1.5h2v2a.75.75 0 001.5 0v-2h2a.75.75 0 000-1.5h-2v-2z" />
+                    </svg>
+                </button>
             </div>
+
+            {/* Members panel */}
+            {showMembers && (
+                <div className="shrink-0 border-b border-zinc-800/60 bg-zinc-900/50 px-4 py-3 flex flex-col gap-3 max-h-64 overflow-y-auto">
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-zinc-400">Members ({members.length})</p>
+                        <button type="button" onClick={() => setShowMembers(false)} aria-label="Close"
+                            className="text-zinc-500 hover:text-white text-xs transition-colors">✕</button>
+                    </div>
+                    {/* Current members */}
+                    <div className="flex flex-wrap gap-1.5">
+                        {members.map((m) => (
+                            <span key={m.id} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700/40 text-xs text-zinc-300">
+                                <span className="h-4 w-4 rounded-full bg-violet-600 flex items-center justify-center text-[9px] font-bold text-white">{m.display_name.charAt(0).toUpperCase()}</span>
+                                {m.display_name}
+                            </span>
+                        ))}
+                    </div>
+                    {/* Friends to add */}
+                    {friends.filter((f) => !memberIds.has(f.id)).length > 0 && (
+                        <div className="flex flex-col gap-1">
+                            <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-semibold">Add friends</p>
+                            {friends.filter((f) => !memberIds.has(f.id)).map((f) => (
+                                <div key={f.id} className="flex items-center gap-2 py-1">
+                                    <div className="h-6 w-6 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300 shrink-0">
+                                        {f.display_name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span className="flex-1 text-xs text-zinc-300 truncate">{f.display_name}</span>
+                                    <button type="button" onClick={() => handleAddMember(f.id)} disabled={addingId === f.id}
+                                        className="h-6 px-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-medium transition-colors disabled:opacity-50 active:scale-95">
+                                        {addingId === f.id ? '…' : '+ Add'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Messages */}
             <div ref={listRef} role="log" aria-label="Group messages" aria-live="polite"
