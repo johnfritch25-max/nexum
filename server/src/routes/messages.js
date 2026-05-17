@@ -57,7 +57,7 @@ function isRoomParticipant(roomId, userId) {
  * and implement infinite-scroll upward.
  */
 router.get('/:roomId', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = Number(req.user.sub);
     const { roomId } = req.params;
 
     if (!isRoomParticipant(roomId, userId)) {
@@ -243,7 +243,7 @@ router.delete('/:messageId', async (req, res) => {
  * Only marks messages where the authenticated user is the receiver.
  */
 router.patch('/:roomId/read', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = Number(req.user.sub);
     const { roomId } = req.params;
 
     if (!isRoomParticipant(roomId, userId)) {

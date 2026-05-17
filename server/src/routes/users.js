@@ -82,7 +82,7 @@ router.patch('/me/incognito', async (req, res) => {
  * Returns up to 20 results, excluding the authenticated user.
  */
 router.get('/search', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = Number(req.user.sub);
     const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
 
     if (q.length < 2) {
@@ -120,7 +120,7 @@ router.get('/search', async (req, res) => {
  * Body: { status_icon: string | null, status_text: string | null }
  */
 router.patch('/me/status', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = Number(req.user.sub);
     const { status_icon, status_text } = req.body ?? {};
     const icon = status_icon ?? null;
     const text = status_text ?? null;
@@ -161,7 +161,7 @@ router.get('/online', async (req, res) => {
 // ── GET /users/me ────────────────────────────────────────────────────────────
 
 router.get('/me', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = Number(req.user.sub);
 
     try {
         const [rows] = await pool.execute(
@@ -208,7 +208,7 @@ router.get('/me', async (req, res) => {
  * Body (all fields optional): { display_name?, bio?, avatar_url? }
  */
 router.patch('/me', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = Number(req.user.sub);
     const { display_name, bio, avatar_url } = req.body ?? {};
 
     const updates  = [];
@@ -265,7 +265,7 @@ router.patch('/me', async (req, res) => {
  * Activity fields are masked to null for friends who have incognito enabled.
  */
 router.get('/me/friends', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = Number(req.user.sub);
 
     try {
         const [rows] = await pool.execute(

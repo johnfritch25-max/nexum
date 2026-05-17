@@ -302,7 +302,7 @@ router.delete('/block/:userId', async (req, res) => {
  * Returns all pending friend requests directed at the authenticated user.
  */
 router.get('/requests/pending', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = Number(req.user.sub);
 
     try {
         const [rows] = await pool.execute(
