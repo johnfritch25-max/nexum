@@ -41,7 +41,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'change_me_in_production';
 const app = express();
 
 app.use(cors({
-    origin:      process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    origin: (origin, callback) => {
+        const allowed = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        // Allow exact match or any vercel.app subdomain
+        if (origin === allowed || origin.endsWith('.vercel.app') || origin === 'http://localhost:5173') {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
 }));
 
@@ -70,8 +79,14 @@ const httpServer = http.createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin:  process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+        origin: (origin, callback) => {
+            if (!origin || origin.endsWith('.vercel.app') || origin === 'http://localhost:5173') {
+                return callback(null, true);
+            }
+            return callback(new Error('Not allowed by CORS'));
+        },
         methods: ['GET', 'POST'],
+        credentials: true,
     },
     pingInterval: 25000,
     pingTimeout:  60000,
