@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#5b21b6"/>
+    </linearGradient>
+    <linearGradient id="bg2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6d28d9"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+
+  <!-- Inner glow -->
+  <rect width="64" height="64" rx="16" fill="white" fill-opacity="0.06"/>
+
+  <!-- Speech bubble shape -->
+  <path d="M12 14C12 11.8 13.8 10 16 10H48C50.2 10 52 11.8 52 14V38C52 40.2 50.2 42 48 42H36L28 52V42H16C13.8 42 12 40.2 12 38V14Z"
+        fill="url(#bg2)" stroke="white" stroke-opacity="0.2" stroke-width="1"/>
+
+  <!-- Letter N -->
+  <text x="32" y="34"
+        font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+        font-size="22"
+        font-weight="700"
+        fill="white"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        letter-spacing="-0.5">N</text>
+</svg>

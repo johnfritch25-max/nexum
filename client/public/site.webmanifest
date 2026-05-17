@@ -1,0 +1,17 @@
+{
+  "name": "Nexum",
+  "short_name": "Nexum",
+  "description": "Real-time messenger and community platform by Johnfritch R. Garcia",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
