@@ -24,9 +24,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 }) => {
     const { modalRef, dragHandleProps } = useDraggable();
 
-    if (!isOpen || !profile) return null;
+    if (!isOpen) return null;
 
-    const initial = profile.display_name.charAt(0).toUpperCase();
+    // Build display data — use profile if available, fall back to activity
+    const displayName = profile?.display_name ?? `User ${activity?.userId ?? ''}`;
+    const username    = profile?.username ?? '';
+    const bio         = profile?.bio ?? null;
+    const lastSeen    = profile?.last_seen_at ?? null;
+    const initial     = displayName.charAt(0).toUpperCase();
     const status  = activity?.onlineStatus ?? profile.online_status ?? 'offline';
 
     return (
@@ -77,8 +82,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 {/* Info */}
                 <div className="flex-1 overflow-y-auto px-5 pt-12 pb-5 flex flex-col gap-4">
                     <div>
-                        <h2 className="text-lg font-bold text-white leading-tight">{profile.display_name}</h2>
-                        <p className="text-sm text-zinc-500">@{profile.username}</p>
+                        <h2 className="text-lg font-bold text-white leading-tight">{displayName}</h2>
+                        <p className="text-sm text-zinc-500">{username ? `@${username}` : ''}</p>
                         <div className="flex items-center gap-1.5 mt-1">
                             <span className={`h-2 w-2 rounded-full ${statusColor(status)}`} />
                             <span className="text-xs text-zinc-400">{statusLabel(status)}</span>
@@ -88,16 +93,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         </div>
                     </div>
 
-                    {profile.bio && (
+                    {bio && (
                         <div className="bg-zinc-800/50 rounded-xl px-3 py-2.5 border border-zinc-700/30">
                             <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1">About</p>
-                            <p className="text-sm text-zinc-300 leading-relaxed">{profile.bio}</p>
+                            <p className="text-sm text-zinc-300 leading-relaxed">{bio}</p>
                         </div>
                     )}
 
-                    {profile.last_seen_at && status === 'offline' && (
+                    {lastSeen && status === 'offline' && (
                         <p className="text-xs text-zinc-600">
-                            Last seen {new Date(profile.last_seen_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            Last seen {new Date(lastSeen).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </p>
                     )}
 

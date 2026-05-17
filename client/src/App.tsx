@@ -260,9 +260,9 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                 onClose={() => setViewingUserId(null)}
                 profile={viewingUserId ? (friendProfiles.get(viewingUserId) ?? null) : null}
                 activity={viewingUserId ? (friendActivity.get(viewingUserId) ?? null) : null}
-                onMessage={() => { if (viewingUserId) handleSelectFriend(viewingUserId); }}
-                onVoiceCall={() => { if (viewingUserId) webrtc.startCall(viewingUserId, 'voice'); }}
-                onVideoCall={() => { if (viewingUserId) webrtc.startCall(viewingUserId, 'video'); }}
+                onMessage={() => { if (viewingUserId) { handleSelectFriend(viewingUserId); setViewingUserId(null); } }}
+                onVoiceCall={() => { if (viewingUserId) { webrtc.startCall(viewingUserId, 'voice'); setViewingUserId(null); } }}
+                onVideoCall={() => { if (viewingUserId) { webrtc.startCall(viewingUserId, 'video'); setViewingUserId(null); } }}
             />
             <CreateGroupModal
                 isOpen={createGroupOpen}
