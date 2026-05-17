@@ -27,12 +27,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     if (!isOpen) return null;
 
     // Build display data — use profile if available, fall back to activity
-    const displayName = profile?.display_name ?? `User ${activity?.userId ?? ''}`;
-    const username    = profile?.username ?? '';
-    const bio         = null; // FriendSummary doesn't include bio
-    const lastSeen    = profile?.last_seen_at ?? null;
-    const initial     = displayName.charAt(0).toUpperCase();
-    const status      = activity?.onlineStatus ?? profile?.online_status ?? 'offline';
+    const displayName  = profile?.display_name ?? `User ${activity?.userId ?? ''}`;
+    const username     = profile?.username ?? '';
+    const bio: null    = null; // bio is not in FriendSummary
+    const lastSeen     = profile?.last_seen_at ?? null;
+    const initial      = displayName.charAt(0).toUpperCase();
+    const onlineStatus = profile?.online_status ?? 'offline';
+    const status       = activity?.onlineStatus ?? onlineStatus;
 
     return (
         <>
