@@ -30,7 +30,8 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onCl
     const toggleFriend = (id: number) => {
         setSelected((prev) => {
             const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
+            const numId = Number(id);
+            next.has(numId) ? next.delete(numId) : next.add(numId);
             return next;
         });
     };
@@ -40,7 +41,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ isOpen, onCl
         if (!name.trim()) { setError('Group name is required.'); return; }
         setIsCreating(true); setError(null);
         try {
-            const group = await createGroup(name.trim(), Array.from(selected));
+            const group = await createGroup(name.trim(), Array.from(selected).map(Number));
             onCreated(group);
             onClose();
         } catch (err) {
