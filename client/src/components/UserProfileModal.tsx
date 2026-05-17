@@ -29,16 +29,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     // Build display data — use profile if available, fall back to activity
     const displayName = profile?.display_name ?? `User ${activity?.userId ?? ''}`;
     const username    = profile?.username ?? '';
-    const bio         = profile?.bio ?? null;
+    const bio         = null; // FriendSummary doesn't include bio
     const lastSeen    = profile?.last_seen_at ?? null;
     const initial     = displayName.charAt(0).toUpperCase();
-    const status  = activity?.onlineStatus ?? profile.online_status ?? 'offline';
+    const status      = activity?.onlineStatus ?? profile?.online_status ?? 'offline';
 
     return (
         <>
             <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 
-            <div ref={modalRef} role="dialog" aria-modal="true" aria-label={`${profile.display_name}'s profile`}
+            <div ref={modalRef} role="dialog" aria-modal="true" aria-label={`${displayName}'s profile`}
                 className={[
                     'fixed z-50 bg-zinc-900 flex flex-col shadow-2xl overflow-hidden',
                     'bottom-0 left-0 right-0 rounded-t-2xl max-h-[80vh] sheet-up',
