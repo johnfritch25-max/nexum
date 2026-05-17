@@ -191,12 +191,13 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                             aria-current={isActive ? 'true' : undefined}
                             className={['group flex items-center gap-2.5 rounded-xl px-2 py-2 w-full text-left transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500',
                                 isActive ? 'bg-violet-600/20 text-white' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'].join(' ')}>
-                            <div className="relative shrink-0"
-                                onClick={(e) => { e.stopPropagation(); setViewingUserId(friend.userId); }}>
-                                <div className={['h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold select-none transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-violet-400',
-                                    isActive ? 'bg-gradient-to-br from-violet-500 to-violet-700 text-white scale-105' : 'bg-zinc-700 text-zinc-300'].join(' ')}>
+                            <div className="relative shrink-0">
+                                <button type="button"
+                                    onClick={(e) => { e.stopPropagation(); setViewingUserId(friend.userId); }}
+                                    aria-label={`View ${name}'s profile`}
+                                        isActive ? 'bg-gradient-to-br from-violet-500 to-violet-700 text-white scale-105' : 'bg-zinc-700 text-zinc-300'].join(' ')}>
                                     {name.charAt(0).toUpperCase()}
-                                </div>
+                                </button>
                                 <span aria-hidden="true" className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-900 presence-dot ${statusColor(friend.onlineStatus)}`} />
                             </div>
                             <div className="min-w-0 flex-1">
@@ -434,11 +435,13 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                                 </button>
                                 {activeFriend ? (
                                     <div className="flex items-center gap-2 animate-slide-right min-w-0" key={`hdr-${transitionKey}`}>
-                                        <div className="relative shrink-0 cursor-pointer"
-                                            onClick={() => activeFriendId && setViewingUserId(activeFriendId)}>
-                                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-violet-400 transition-all">
+                                        <div className="relative shrink-0">
+                                            <button type="button"
+                                                onClick={() => activeFriendId && setViewingUserId(activeFriendId)}
+                                                aria-label={`View ${activeFriendName}'s profile`}
+                                                className="h-8 w-8 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-violet-400 transition-all">
                                                 {activeFriendName.charAt(0).toUpperCase()}
-                                            </div>
+                                            </button>
                                             <span aria-hidden="true" className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-900 presence-dot ${statusColor(activeFriend.onlineStatus)}`} />
                                         </div>
                                         <div className="min-w-0">
