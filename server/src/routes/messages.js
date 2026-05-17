@@ -40,7 +40,8 @@ function isRoomParticipant(roomId, userId) {
     const parts = roomId.split('_');
     if (parts.length !== 2) return false;
     const [a, b] = parts.map(Number);
-    return a === userId || b === userId;
+    const uid = Number(userId);
+    return a === uid || b === uid;
 }
 
 // ── GET /messages/:roomId ────────────────────────────────────────────────────
