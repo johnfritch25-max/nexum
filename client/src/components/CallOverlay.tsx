@@ -27,7 +27,7 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
     return (
         <div role="dialog" aria-modal="true"
             aria-label={callStatus === 'incoming' ? `Incoming ${callLabel} from ${remoteName}` : `${callLabel} with ${remoteName}`}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 sm:gap-6 p-4 sm:p-6 bg-zinc-950/97 backdrop-blur-xl safe-top safe-bottom">
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 sm:gap-6 p-4 sm:p-6 bg-zinc-950/97 backdrop-blur-xl safe-top safe-bottom overflow-hidden">
 
             {/* Incoming */}
             {callStatus === 'incoming' && (
@@ -73,8 +73,8 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
 
             {/* Connected — Video */}
             {callStatus === 'connected' && !isVoice && (
-                <div className="w-full max-w-3xl flex flex-col gap-3 sm:gap-4 animate-fade-in">
-                    <div className="relative w-full aspect-video bg-zinc-900 rounded-xl sm:rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                <div className="w-full h-full flex flex-col gap-3 sm:gap-4 animate-fade-in sm:max-w-3xl sm:mx-auto">
+                    <div className="relative w-full flex-1 sm:flex-none sm:aspect-video bg-zinc-900 rounded-none sm:rounded-xl overflow-hidden border-0 sm:border sm:border-zinc-800 shadow-2xl">
                         <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" aria-label={`${remoteName}'s video`} />
                         {!remoteStream && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
@@ -82,11 +82,11 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                                 <p className="text-zinc-400 text-sm">Connecting…</p>
                             </div>
                         )}
-                        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 px-2 py-0.5 rounded-lg bg-black/50 backdrop-blur-sm text-xs text-white font-medium">
+                        <div className="absolute top-3 left-3 px-2 py-0.5 rounded-lg bg-black/50 backdrop-blur-sm text-xs text-white font-medium">
                             {remoteName}
                         </div>
                         {/* Local PiP */}
-                        <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 w-24 sm:w-36 aspect-video bg-zinc-800 rounded-lg sm:rounded-xl overflow-hidden border border-zinc-700 shadow-xl">
+                        <div className="absolute bottom-3 right-3 w-28 sm:w-36 aspect-video bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 shadow-xl">
                             <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" aria-label="Your video" />
                             {isCameraOff && (
                                 <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
@@ -95,7 +95,7 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                             )}
                         </div>
                     </div>
-                    <div className="flex items-center justify-center gap-3 sm:gap-4">
+                    <div className="flex items-center justify-center gap-3 sm:gap-4 py-2 sm:py-0 shrink-0">
                         <ControlBtn onClick={toggleMute} label={isMuted ? 'Unmute' : 'Mute'} active={isMuted}>
                             {isMuted ? <MicOffIcon /> : <MicIcon />}
                         </ControlBtn>
