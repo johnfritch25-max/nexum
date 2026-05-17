@@ -88,7 +88,7 @@ export const GroupChat: React.FC<GroupChatProps> = ({ socket, userId, group, onB
             </div>
 
             {/* Compose */}
-            <div className="shrink-0 px-3 sm:px-4 pb-3 sm:pb-4 pt-2 safe-bottom">
+            <div className="shrink-0 px-3 sm:px-4 pt-2 pb-20 md:pb-4">
                 <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="sr-only" aria-hidden="true"
                     onChange={(e) => {
                         const file = e.target.files?.[0];
