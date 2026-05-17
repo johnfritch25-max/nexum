@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Analytics }                  from '@vercel/analytics/react';
 import { ErrorBoundary }              from './components/ErrorBoundary';
 import { AuthForm }                   from './components/AuthForm';
 import { IncognitoToggle }            from './components/IncognitoToggle';
@@ -26,7 +27,12 @@ import { getMe }                      from './api/users';
 import { getGroups, type Group }      from './api/groups';
 
 export default function App(): React.ReactElement {
-    return <ErrorBoundary><AppInner /></ErrorBoundary>;
+    return (
+        <ErrorBoundary>
+            <AppInner />
+            <Analytics />
+        </ErrorBoundary>
+    );
 }
 
 function AppInner(): React.ReactElement {
