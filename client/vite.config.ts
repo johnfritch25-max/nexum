@@ -28,24 +28,9 @@ export default defineConfig({
                     },
                 ],
             },
-            workbox: {
-                // Cache app shell and static assets
-                globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-                // Don't cache API calls — always go to network
-                navigateFallback: 'index.html',
-                navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/messages/, /^\/friends/, /^\/users/, /^\/community/, /^\/groups/, /^\/health/],
-                runtimeCaching: [
-                    {
-                        // Cache Google Fonts
-                        urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-                        handler: 'CacheFirst',
-                        options: {
-                            cacheName: 'google-fonts-cache',
-                            expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                        },
-                    },
-                ],
-            },
+            // Disable service worker to prevent blank screen issues
+            // The manifest still enables "Add to Home Screen"
+            selfDestroying: true,
         }),
     ],
     server: { port: 5173, strictPort: true },
