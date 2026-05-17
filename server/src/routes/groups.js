@@ -78,7 +78,6 @@ router.post('/:id/members', async (req, res) => {
         return res.json({ message: 'Member added.' });
     } catch (e) { console.error('[Groups] add member:', e); return res.status(500).json({ error: 'Internal server error.' }); }
 });
-
 // DELETE /groups/:id/members/:uid
 router.delete('/:id/members/:uid', async (req, res) => {
     const userId  = Number(req.user.sub);

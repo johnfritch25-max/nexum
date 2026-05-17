@@ -74,7 +74,19 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     const [activeGroupId, setActiveGroupId] = useState<number | null>(null);
     const [createGroupOpen, setCreateGroupOpen] = useState(false);
     const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
-    useEffect(() => { getGroups().then(setGroups).catch(() => {}); }, []);
+
+    const refreshGroups = useCallback(() => {
+        getGroups().then(setGroups).catch(() => {});
+    }, []);
+
+    useEffect(() => { refreshGroups(); }, [refreshGroups]);
+
+    // Listen for group updates via socket
+    useEffect(() => {
+        if (!socket) return;
+        socket.on('group_updated', refreshGroups);
+        return () => { socket.off('group_updated', refreshGroups); };
+    }, [socket, refreshGroups]);
 
     const { unreadCounts, clearUnread } = useUnreadCounts(socket, userId, activeFriendId);
     const totalUnread = Array.from(unreadCounts.values()).reduce((a, b) => a + b, 0);
