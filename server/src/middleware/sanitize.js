@@ -39,6 +39,10 @@ function sanitizeBody(req, _res, next) {
             if (typeof value === 'string' && key !== 'password') {
                 req.body[key] = stripHtml(value);
             }
+            // Arrays of primitives (e.g. memberIds) — sanitize string elements only
+            if (Array.isArray(value)) {
+                req.body[key] = value.map((v) => typeof v === 'string' ? stripHtml(v) : v);
+            }
         }
     }
     next();
