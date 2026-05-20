@@ -289,7 +289,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, userId, comments, onReact, on
                 </div>
             )}
 
-            {/* Reactions */}
+            {/* Reactions bar + React button */}
             <div className="px-4 pb-3 flex items-center gap-1.5 flex-wrap">
                 {post.reactions.filter((r) => r.count > 0).map((r) => (
                     <button key={r.emoji} type="button" onClick={() => onReact(post.id, r.emoji)}
@@ -298,21 +298,43 @@ const PostCard: React.FC<PostCardProps> = ({ post, userId, comments, onReact, on
                         <span>{r.emoji}</span><span className="font-medium">{r.count}</span>
                     </button>
                 ))}
-                <div className="relative">
-                    <button type="button" onClick={() => setShowEmojiPick((v) => !v)} aria-label="Add reaction"
-                        className="h-7 w-7 rounded-full flex items-center justify-center text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors text-base font-medium">
-                        +
-                    </button>
+
+                {/* Facebook-style React button with floating emoji picker */}
+                <div className="relative ml-auto">
+                    {/* Floating emoji picker — shows on hover/touch */}
                     {showEmojiPick && (
-                        <div className="absolute bottom-9 left-0 z-20 flex gap-1 bg-zinc-800 border border-zinc-700/60 rounded-xl p-2 shadow-xl">
+                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-zinc-800/95 backdrop-blur-sm border border-zinc-700/60 rounded-full px-3 py-2 shadow-2xl animate-scale-in"
+                            onMouseLeave={() => setShowEmojiPick(false)}>
                             {EMOJIS.map((em) => (
-                                <button key={em} type="button" onClick={() => { onReact(post.id, em); setShowEmojiPick(false); }}
-                                    className="text-xl hover:scale-125 transition-transform p-0.5 rounded active:scale-95" aria-label={`React with ${em}`}>
+                                <button key={em} type="button"
+                                    onClick={() => { onReact(post.id, em); setShowEmojiPick(false); }}
+                                    aria-label={`React with ${em}`}
+                                    className="text-2xl hover:scale-150 active:scale-125 transition-transform duration-150 p-0.5 rounded-full hover:bg-zinc-700/50">
                                     {em}
                                 </button>
                             ))}
                         </div>
                     )}
+
+                    {/* React button */}
+                    <button type="button"
+                        onMouseEnter={() => setShowEmojiPick(true)}
+                        onTouchStart={() => setShowEmojiPick((v) => !v)}
+                        onClick={() => {
+                            // On click: if already reacted, toggle off; otherwise show picker
+                            const myReaction = post.reactions.find((r) => r.reactedByMe);
+                            if (myReaction) { onReact(post.id, myReaction.emoji); }
+                            else { setShowEmojiPick((v) => !v); }
+                        }}
+                        className={['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all active:scale-95',
+                            post.reactions.some((r) => r.reactedByMe)
+                                ? 'bg-violet-600/20 border-violet-500/50 text-violet-300'
+                                : 'bg-zinc-800/60 border-zinc-700/40 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'].join(' ')}>
+                        {post.reactions.find((r) => r.reactedByMe)
+                            ? <><span className="text-base leading-none">{post.reactions.find((r) => r.reactedByMe)?.emoji}</span> <span>Reacted</span></>
+                            : <><span>👍</span> <span>React</span></>
+                        }
+                    </button>
                 </div>
             </div>
 
