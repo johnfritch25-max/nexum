@@ -86,15 +86,28 @@ export function useMessages(
         setHasMore(false);
         setIsLoading(true);
 
+        // Try to load from localStorage cache first for instant display
+        const cacheKey = `nexum_msgs_${roomId}`;
+        try {
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                const parsed = JSON.parse(cached) as Message[];
+                if (parsed.length > 0) setMessages(parsed);
+            }
+        } catch { /* ignore */ }
+
         getMessageHistory(roomId, 50)
             .then(({ messages: records, hasMore: more, nextCursor }) => {
-                // History comes newest-first; reverse for chronological display
-                setMessages(records.map(normaliseRecord).reverse());
+                const sorted = records.map(normaliseRecord).reverse();
+                setMessages(sorted);
                 setHasMore(more);
                 cursorRef.current = nextCursor;
+                // Cache for next reload
+                try { localStorage.setItem(cacheKey, JSON.stringify(sorted)); } catch { /* ignore */ }
             })
             .catch((err) => {
                 console.error('[useMessages] Failed to load history:', err);
+                // Keep showing cached messages on error
             })
             .finally(() => {
                 setIsLoading(false);
@@ -110,7 +123,12 @@ export function useMessages(
         const handleReceiveMessage = (message: Message) => {
             setMessages((prev) => {
                 if (prev.some((m) => m.id === message.id)) return prev;
-                return [...prev, message];
+                const next = [...prev, message];
+                // Update cache
+                if (roomId) {
+                    try { localStorage.setItem(`nexum_msgs_${roomId}`, JSON.stringify(next.slice(-50))); } catch { /* ignore */ }
+                }
+                return next;
             });
         };
 
