@@ -289,64 +289,66 @@ const PostCard: React.FC<PostCardProps> = ({ post, userId, comments, onReact, on
                 </div>
             )}
 
-            {/* Reactions bar + React button */}
-            <div className="px-4 pb-3 flex items-center gap-1.5 flex-wrap">
-                {post.reactions.filter((r) => r.count > 0).map((r) => (
-                    <button key={r.emoji} type="button" onClick={() => onReact(post.id, r.emoji)}
-                        className={['flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border transition-all active:scale-95',
-                            r.reactedByMe ? 'bg-violet-600/20 border-violet-500/50 text-violet-300' : 'bg-zinc-800 border-zinc-700/40 text-zinc-400 hover:border-zinc-600'].join(' ')}>
-                        <span>{r.emoji}</span><span className="font-medium">{r.count}</span>
-                    </button>
-                ))}
+            {/* Footer — React + Comments in same row like Facebook */}
+            <div className="px-4 pb-3 border-t border-zinc-800/40 pt-2.5">
+                {/* Reaction counts row */}
+                {post.reactions.filter((r) => r.count > 0).length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                        {post.reactions.filter((r) => r.count > 0).map((r) => (
+                            <button key={r.emoji} type="button" onClick={() => onReact(post.id, r.emoji)}
+                                className={['flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border transition-all active:scale-95',
+                                    r.reactedByMe ? 'bg-violet-600/20 border-violet-500/50 text-violet-300' : 'bg-zinc-800 border-zinc-700/40 text-zinc-400 hover:border-zinc-600'].join(' ')}>
+                                <span>{r.emoji}</span><span className="font-medium">{r.count}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
 
-                {/* Facebook-style React button with floating emoji picker */}
-                <div className="relative ml-auto">
-                    {/* Floating emoji picker — shows on hover/touch */}
-                    {showEmojiPick && (
-                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-zinc-800/95 backdrop-blur-sm border border-zinc-700/60 rounded-full px-3 py-2 shadow-2xl animate-scale-in"
-                            onMouseLeave={() => setShowEmojiPick(false)}>
-                            {EMOJIS.map((em) => (
-                                <button key={em} type="button"
-                                    onClick={() => { onReact(post.id, em); setShowEmojiPick(false); }}
-                                    aria-label={`React with ${em}`}
-                                    className="text-2xl hover:scale-150 active:scale-125 transition-transform duration-150 p-0.5 rounded-full hover:bg-zinc-700/50">
-                                    {em}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                {/* Action buttons row */}
+                <div className="flex items-center gap-2">
+                    {/* React button with floating emoji picker */}
+                    <div className="relative">
+                        {showEmojiPick && (
+                            <div className="absolute bottom-10 left-0 z-30 flex items-center gap-1 bg-zinc-800/95 backdrop-blur-sm border border-zinc-700/60 rounded-full px-3 py-2 shadow-2xl animate-scale-in"
+                                onMouseLeave={() => setShowEmojiPick(false)}>
+                                {EMOJIS.map((em) => (
+                                    <button key={em} type="button"
+                                        onClick={() => { onReact(post.id, em); setShowEmojiPick(false); }}
+                                        aria-label={`React with ${em}`}
+                                        className="text-2xl hover:scale-150 active:scale-125 transition-transform duration-150 p-0.5 rounded-full hover:bg-zinc-700/50">
+                                        {em}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        <button type="button"
+                            onMouseEnter={() => setShowEmojiPick(true)}
+                            onTouchStart={() => setShowEmojiPick((v) => !v)}
+                            onClick={() => {
+                                const myReaction = post.reactions.find((r) => r.reactedByMe);
+                                if (myReaction) { onReact(post.id, myReaction.emoji); }
+                                else { setShowEmojiPick((v) => !v); }
+                            }}
+                            className={['flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all active:scale-95',
+                                post.reactions.some((r) => r.reactedByMe)
+                                    ? 'bg-violet-600/20 border-violet-500/50 text-violet-300'
+                                    : 'bg-zinc-800/60 border-zinc-700/40 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'].join(' ')}>
+                            {post.reactions.find((r) => r.reactedByMe)
+                                ? <><span className="text-base leading-none">{post.reactions.find((r) => r.reactedByMe)?.emoji}</span><span>Reacted</span></>
+                                : <><span>👍</span><span>React</span></>
+                            }
+                        </button>
+                    </div>
 
-                    {/* React button */}
-                    <button type="button"
-                        onMouseEnter={() => setShowEmojiPick(true)}
-                        onTouchStart={() => setShowEmojiPick((v) => !v)}
-                        onClick={() => {
-                            // On click: if already reacted, toggle off; otherwise show picker
-                            const myReaction = post.reactions.find((r) => r.reactedByMe);
-                            if (myReaction) { onReact(post.id, myReaction.emoji); }
-                            else { setShowEmojiPick((v) => !v); }
-                        }}
-                        className={['flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all active:scale-95',
-                            post.reactions.some((r) => r.reactedByMe)
-                                ? 'bg-violet-600/20 border-violet-500/50 text-violet-300'
-                                : 'bg-zinc-800/60 border-zinc-700/40 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'].join(' ')}>
-                        {post.reactions.find((r) => r.reactedByMe)
-                            ? <><span className="text-base leading-none">{post.reactions.find((r) => r.reactedByMe)?.emoji}</span> <span>Reacted</span></>
-                            : <><span>👍</span> <span>React</span></>
-                        }
+                    {/* Comments button */}
+                    <button type="button" onClick={handleToggleComments}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border bg-zinc-800/60 border-zinc-700/40 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-all active:scale-95">
+                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+                            <path fillRule="evenodd" d="M1 8.74c0 .983.713 1.825 1.69 1.943L3 10.698V13a.75.75 0 001.28.53l1.82-1.82A3.484 3.484 0 007.5 12h1c1.933 0 3.5-1.567 3.5-3.5v-1C12 5.567 10.433 4 8.5 4h-1C5.567 4 4 5.567 4 7.5v.5H2.75A.75.75 0 002 8.74z" clipRule="evenodd" />
+                        </svg>
+                        {post.commentCount} {post.commentCount === 1 ? 'Comment' : 'Comments'}
                     </button>
                 </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-4 pb-3 flex items-center gap-4 border-t border-zinc-800/40 pt-2.5">
-                <button type="button" onClick={handleToggleComments}
-                    className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors py-1">
-                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
-                        <path fillRule="evenodd" d="M1 8.74c0 .983.713 1.825 1.69 1.943L3 10.698V13a.75.75 0 001.28.53l1.82-1.82A3.484 3.484 0 007.5 12h1c1.933 0 3.5-1.567 3.5-3.5v-1C12 5.567 10.433 4 8.5 4h-1C5.567 4 4 5.567 4 7.5v.5H2.75A.75.75 0 002 8.74z" clipRule="evenodd" />
-                    </svg>
-                    {post.commentCount} {post.commentCount === 1 ? 'comment' : 'comments'}
-                </button>
             </div>
 
             {/* Comments */}
