@@ -257,6 +257,7 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                 ) : friendList.map((friend) => {
                     const profile  = friendProfiles.get(friend.userId);
                     const name     = profile?.display_name ?? `User ${friend.userId}`;
+                    const friendAvatar = profile?.avatar_url ?? null;
                     const isActive = activeFriendId === friend.userId;
                     const unread   = unreadCounts.get(friend.userId) ?? 0;
                     return (
@@ -265,9 +266,11 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                             className={['group flex items-center gap-2.5 rounded-xl px-2 py-2 w-full text-left transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500',
                                 isActive ? 'bg-violet-600/20 text-white' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'].join(' ')}>
                             <div className="relative shrink-0">
-                                <div className={['h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold select-none transition-all duration-200',
+                                <div className={['h-9 w-9 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold select-none transition-all duration-200',
                                     isActive ? 'bg-gradient-to-br from-violet-500 to-violet-700 text-white scale-105' : 'bg-zinc-700 text-zinc-300'].join(' ')}>
-                                    {name.charAt(0).toUpperCase()}
+                                    {friendAvatar
+                                        ? <img src={friendAvatar} alt={name} className="w-full h-full object-cover" />
+                                        : name.charAt(0).toUpperCase()}
                                 </div>
                                 <span aria-hidden="true" className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-900 presence-dot ${statusColor(friend.onlineStatus)}`} />
                             </div>
@@ -585,8 +588,10 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                                             <button type="button"
                                                 onClick={() => activeFriendId && setViewingUserId(activeFriendId)}
                                                 aria-label={`View ${activeFriendName}'s profile`}
-                                                className="h-8 w-8 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-violet-400 transition-all">
-                                                {activeFriendName.charAt(0).toUpperCase()}
+                                                className="h-8 w-8 rounded-full overflow-hidden bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center text-xs font-bold text-white hover:ring-2 hover:ring-violet-400 transition-all">
+                                                {activeFriendId && friendProfiles.get(activeFriendId)?.avatar_url
+                                                    ? <img src={friendProfiles.get(activeFriendId)!.avatar_url!} alt={activeFriendName} className="w-full h-full object-cover" />
+                                                    : activeFriendName.charAt(0).toUpperCase()}
                                             </button>
                                             <span aria-hidden="true" className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-900 presence-dot ${statusColor(activeFriend.onlineStatus)}`} />
                                         </div>
@@ -662,7 +667,13 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                                 return (
                                     <div key={msg.id} className={`flex bubble-in ${isMine ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-0.5' : 'mt-3'}`}
                                         onContextMenu={(e) => { if (msg.isDeleted || msg.messageType === 'image') return; e.preventDefault(); setCtxMenu({ msgId: msg.id, x: e.clientX, y: e.clientY, isMine }); }}>
-                                        {!isMine && !isGrouped && <div className="h-7 w-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300 shrink-0 mr-2 mt-0.5">{activeFriendName.charAt(0).toUpperCase()}</div>}
+                                        {!isMine && !isGrouped && (
+                                            <div className="h-7 w-7 rounded-full overflow-hidden bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300 shrink-0 mr-2 mt-0.5">
+                                                {activeFriendId && friendProfiles.get(activeFriendId)?.avatar_url
+                                                    ? <img src={friendProfiles.get(activeFriendId)!.avatar_url!} alt={activeFriendName} className="w-full h-full object-cover" />
+                                                    : activeFriendName.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
                                         {!isMine && isGrouped && <div className="w-7 mr-2 shrink-0" />}
                                         <div className={`max-w-[80%] sm:max-w-[65%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                                             {isEditing ? (
