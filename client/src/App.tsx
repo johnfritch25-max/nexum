@@ -332,6 +332,7 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
             {/* Activity bar */}
             <ActivityBar
                 activity={activityBar.currentActivity}
+                isAway={activityBar.isAway}
                 onSetActivity={activityBar.setActivity}
                 onStream={() => webrtc.toggleScreenShare()}
                 isStreaming={webrtc.isScreenSharing}
