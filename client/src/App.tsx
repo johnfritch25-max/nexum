@@ -67,7 +67,8 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     const [soundSettingsOpen, setSoundSettingsOpen] = useState(false);
     const [displayName, setDisplayName] = useState(initName);
     const [bio, setBio]                 = useState<string | null>(null);
-    useEffect(() => { getMe().then((p) => setBio(p.bio)).catch(() => {}); }, []);
+    const [avatarUrl, setAvatarUrl]     = useState<string | null>(null);
+    useEffect(() => { getMe().then((p) => { setBio(p.bio); setAvatarUrl(p.avatar_url); }).catch(() => {}); }, []);
 
     const friendList = Array.from(friendActivity.values());
     const [activeFriendId, setActiveFriendId] = useState<number | null>(null);
@@ -317,7 +318,9 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
             {/* User panel */}
             <div className="h-14 shrink-0 border-t border-zinc-800/60 flex items-center gap-2.5 px-3">
                 <button type="button" onClick={() => { setProfilePanelOpen((p) => !p); setFriendPanelOpen(false); }} aria-label="Edit profile" className="relative shrink-0 group">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-xs font-bold text-white select-none group-hover:ring-2 group-hover:ring-violet-400 transition-all">{myInitial}</div>
+                    <div className="h-8 w-8 rounded-full overflow-hidden bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-xs font-bold text-white select-none group-hover:ring-2 group-hover:ring-violet-400 transition-all">
+                        {avatarUrl ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" /> : myInitial}
+                    </div>
                     <span aria-hidden="true" className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-900 bg-emerald-400" />
                 </button>
                 <div className="flex-1 min-w-0">
@@ -365,7 +368,7 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
             />
             <CallOverlay {...webrtc} remoteName={callerName} />
             <FriendPanel isOpen={friendPanelOpen} onClose={() => setFriendPanelOpen(false)} onFriendAdded={refreshFriends} currentUserId={userId} />
-            <ProfilePanel isOpen={profilePanelOpen} onClose={() => setProfilePanelOpen(false)} displayName={displayName} bio={bio} username={username} onSaved={(n, b) => { setDisplayName(n); setBio(b); }} />
+            <ProfilePanel isOpen={profilePanelOpen} onClose={() => setProfilePanelOpen(false)} displayName={displayName} bio={bio} username={username} avatarUrl={avatarUrl} onSaved={(n, b, a) => { setDisplayName(n); setBio(b); setAvatarUrl(a); }} />
             <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
             <ConfirmModal
                 isOpen={confirmDelete !== null}
@@ -789,7 +792,9 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                 </MobileTabBtn>
                 <MobileTabBtn label="Profile" active={profilePanelOpen}
                     onClick={() => { setProfilePanelOpen((p) => !p); setFriendPanelOpen(false); }}>
-                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-[10px] font-bold text-white">{myInitial}</div>
+                    <div className="h-6 w-6 rounded-full overflow-hidden bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-[10px] font-bold text-white">
+                        {avatarUrl ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" /> : myInitial}
+                    </div>
                 </MobileTabBtn>
                 {canInstall && (
                     <MobileTabBtn label="Install" active={false} onClick={install}>

@@ -72,8 +72,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     {/* Avatar */}
                     <div className="absolute -bottom-8 left-5">
                         <div className="relative">
-                            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-2xl font-bold text-white border-4 border-zinc-900 select-none">
-                                {initial}
+                            <div className="h-16 w-16 rounded-full overflow-hidden bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-2xl font-bold text-white border-4 border-zinc-900 select-none">
+                                {profile?.avatar_url
+                                    ? <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
+                                    : initial}
                             </div>
                             <span aria-hidden="true" className={`absolute bottom-0.5 right-0.5 h-4 w-4 rounded-full border-2 border-zinc-900 ${statusColor(status)}`} />
                         </div>
