@@ -10,6 +10,7 @@ import { GroupChat }                  from './components/GroupChat';
 import { CreateGroupModal }           from './components/CreateGroupModal';
 import { AboutModal }                 from './components/AboutModal';
 import { UserProfileModal }           from './components/UserProfileModal';
+import { ConfirmModal }               from './components/ConfirmModal';
 import { useAuth }                    from './hooks/useAuth';
 import { useSocket }                  from './hooks/useSocket';
 import { useIncognitoMode }           from './hooks/useIncognitoMode';
@@ -117,6 +118,8 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     const editInputRef = useRef<HTMLInputElement>(null);
     const [ctxMenu, setCtxMenu] = useState<{ msgId: number; x: number; y: number; isMine: boolean } | null>(null);
     const [msgReactionPicker, setMsgReactionPicker] = useState<number | null>(null); // messageId showing picker
+    const [confirmDelete, setConfirmDelete] = useState<number | null>(null); // messageId to delete
+    const [confirmLogout, setConfirmLogout] = useState(false);
 
     const MSG_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🔥'];
 
@@ -258,7 +261,7 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                     <p className="text-xs font-semibold text-white truncate leading-tight">{displayName}</p>
                     <p className="text-[10px] text-zinc-500 leading-tight">{incognito.isIncognito ? '👻 Incognito' : '● Online'}</p>
                 </div>
-                <button type="button" onClick={onLogout} aria-label="Sign out" className="shrink-0 h-7 w-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-700 transition-colors">
+                <button type="button" onClick={() => setConfirmLogout(true)} aria-label="Sign out" className="shrink-0 h-7 w-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-700 transition-colors">
                     <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                         <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clipRule="evenodd" />
                         <path fillRule="evenodd" d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-1.08a.75.75 0 10-1.004-1.114l-2.5 2.5a.75.75 0 000 1.114l2.5 2.5a.75.75 0 101.004-1.114l-1.048-1.08h9.546A.75.75 0 0019 10z" clipRule="evenodd" />
@@ -280,6 +283,24 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
             <FriendPanel isOpen={friendPanelOpen} onClose={() => setFriendPanelOpen(false)} onFriendAdded={refreshFriends} currentUserId={userId} />
             <ProfilePanel isOpen={profilePanelOpen} onClose={() => setProfilePanelOpen(false)} displayName={displayName} bio={bio} username={username} onSaved={(n, b) => { setDisplayName(n); setBio(b); }} />
             <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
+            <ConfirmModal
+                isOpen={confirmDelete !== null}
+                title="Delete Message"
+                message="This message will be permanently deleted. This action cannot be undone."
+                confirmLabel="Delete"
+                danger
+                onConfirm={() => { if (confirmDelete !== null) { handleDelete(confirmDelete); setConfirmDelete(null); setCtxMenu(null); } }}
+                onCancel={() => setConfirmDelete(null)}
+            />
+            <ConfirmModal
+                isOpen={confirmLogout}
+                title="Sign Out"
+                message="Are you sure you want to sign out of Nexum?"
+                confirmLabel="Sign Out"
+                danger
+                onConfirm={() => { setConfirmLogout(false); onLogout(); }}
+                onCancel={() => setConfirmLogout(false)}
+            />
             <UserProfileModal
                 isOpen={viewingUserId !== null}
                 onClose={() => setViewingUserId(null)}
@@ -319,7 +340,7 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                     )}
                     {ctxMenu.isMine && (
                         <button role="menuitem" type="button" className="w-full text-left px-3 py-2 text-red-400 hover:bg-zinc-700 transition-colors flex items-center gap-2"
-                            onClick={() => { handleDelete(ctxMenu.msgId); setCtxMenu(null); }}>
+                            onClick={() => { setConfirmDelete(ctxMenu.msgId); }}>
                             <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 000 1.5h.3l.815 8.15A1.5 1.5 0 005.357 15h5.285a1.5 1.5 0 001.493-1.35l.815-8.15h.3a.75.75 0 000-1.5H11v-.75A2.25 2.25 0 008.75 1h-1.5A2.25 2.25 0 005 3.25z" clipRule="evenodd" /></svg>
                             Delete
                         </button>
