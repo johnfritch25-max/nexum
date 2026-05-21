@@ -299,7 +299,17 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
             {ctxMenu && (
                 <div role="menu" className="fixed z-50 bg-zinc-800 border border-zinc-700/60 rounded-xl shadow-2xl py-1 min-w-[140px] text-sm"
                     onClick={(e) => e.stopPropagation()}
-                    ref={(el) => { if (el) { el.style.top = `${ctxMenu.y}px`; el.style.left = `${ctxMenu.x}px`; } }}>
+                    ref={(el) => {
+                        if (el) {
+                            // Clamp so menu never goes off-screen
+                            const menuW = 160;
+                            const menuH = 120;
+                            const x = Math.min(ctxMenu.x, window.innerWidth - menuW - 8);
+                            const y = Math.min(ctxMenu.y, window.innerHeight - menuH - 8);
+                            el.style.top  = `${Math.max(8, y)}px`;
+                            el.style.left = `${Math.max(8, x)}px`;
+                        }
+                    }}>
                     {ctxMenu.isMine && (
                         <button role="menuitem" type="button" className="w-full text-left px-3 py-2 text-zinc-200 hover:bg-zinc-700 transition-colors flex items-center gap-2"
                             onClick={() => { const msg = messages.find((m) => m.id === ctxMenu.msgId); if (msg) { setEditingId(msg.id); setEditDraft(msg.content); } setCtxMenu(null); }}>
