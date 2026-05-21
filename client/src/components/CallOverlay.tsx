@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import type { UseWebRTCReturn } from '../hooks/useWebRTC';
-import { useCallSounds } from '../hooks/useCallSounds';
 
 interface CallOverlayProps extends UseWebRTCReturn { remoteName: string; }
 
@@ -11,9 +10,6 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
 }) => {
     const localVideoRef  = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
-
-    // ── Call sounds ───────────────────────────────────────────────────────────
-    useCallSounds(callStatus);
 
     useEffect(() => { if (localVideoRef.current  && localStream)  localVideoRef.current.srcObject  = localStream;  }, [localStream]);
     useEffect(() => { if (remoteVideoRef.current && remoteStream) remoteVideoRef.current.srcObject = remoteStream; }, [remoteStream]);

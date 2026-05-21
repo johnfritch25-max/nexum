@@ -17,6 +17,7 @@ import { SoundSettingsModal }         from './components/SoundSettingsModal';
 import { useActivityBar }             from './hooks/useActivityBar';
 import { useNotificationSound }       from './hooks/useNotificationSound';
 import { useToastNotifications }      from './hooks/useToastNotifications';
+import { useCallSounds }              from './hooks/useCallSounds';
 import { useAuth }                    from './hooks/useAuth';
 import { useSocket }                  from './hooks/useSocket';
 import { useIncognitoMode }           from './hooks/useIncognitoMode';
@@ -61,9 +62,9 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     const { canInstall, install }    = useInstallPrompt();
     const activityBar                = useActivityBar(socket, userId, incognito.isIncognito);
     const notifSound                 = useNotificationSound();
+    const callSounds                 = useCallSounds(webrtc.callStatus);
     const toasts                     = useToastNotifications();
     const [soundSettingsOpen, setSoundSettingsOpen] = useState(false);
-
     const [displayName, setDisplayName] = useState(initName);
     const [bio, setBio]                 = useState<string | null>(null);
     useEffect(() => { getMe().then((p) => setBio(p.bio)).catch(() => {}); }, []);
@@ -352,8 +353,15 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                 isOpen={soundSettingsOpen}
                 onClose={() => setSoundSettingsOpen(false)}
                 selectedSound={notifSound.selectedSound}
-                onSelect={notifSound.setSound}
-                onPreview={notifSound.playPreview}
+                customFileName={notifSound.customFileName}
+                onSelectSound={notifSound.setSound}
+                onUploadSound={notifSound.uploadCustomSound}
+                onRemoveSound={notifSound.removeCustomSound}
+                onPreviewSound={notifSound.playPreview}
+                customRingtoneName={callSounds.customRingtoneName}
+                onUploadRingtone={callSounds.uploadCustomRingtone}
+                onRemoveRingtone={callSounds.removeCustomRingtone}
+                onPreviewRingtone={callSounds.previewCustomRingtone}
             />
             <CallOverlay {...webrtc} remoteName={callerName} />
             <FriendPanel isOpen={friendPanelOpen} onClose={() => setFriendPanelOpen(false)} onFriendAdded={refreshFriends} currentUserId={userId} />
