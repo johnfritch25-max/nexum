@@ -201,18 +201,26 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ socket, userId, disp
                     </div>
                     <div className="flex flex-col gap-0.5 p-2">
                         {onlineUsers.map((u) => (
-                            <div key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+                            <button
+                                key={u.id}
+                                type="button"
+                                onClick={() => onViewProfile(u.id)}
+                                aria-label={`View ${u.display_name}'s profile`}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-zinc-800/60 transition-colors text-left w-full group"
+                            >
                                 <div className="relative shrink-0">
-                                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center text-xs font-bold text-white">
-                                        {u.display_name.charAt(0).toUpperCase()}
+                                    <div className="h-7 w-7 rounded-full overflow-hidden bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center text-xs font-bold text-white group-hover:ring-2 group-hover:ring-violet-400 transition-all">
+                                        {u.avatar_url
+                                            ? <img src={u.avatar_url} alt={u.display_name} className="w-full h-full object-cover" />
+                                            : u.display_name.charAt(0).toUpperCase()}
                                     </div>
                                     <span aria-hidden="true" className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-zinc-900 bg-emerald-400" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-xs font-medium text-zinc-300 truncate">{u.display_name}</p>
+                                    <p className="text-xs font-medium text-zinc-300 truncate group-hover:text-white transition-colors">{u.display_name}</p>
                                     <p className="text-[10px] text-zinc-600 truncate">@{u.username}</p>
                                 </div>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 </aside>

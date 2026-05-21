@@ -101,6 +101,7 @@ export interface OnlineUser {
     username: string;
     display_name: string;
     online_status: string;
+    avatar_url: string | null;
 }
 
 export async function getOnlineUsers(): Promise<OnlineUser[]> {

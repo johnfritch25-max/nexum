@@ -147,7 +147,7 @@ router.patch('/me/status', async (req, res) => {
 router.get('/online', async (req, res) => {
     try {
         const [rows] = await pool.execute(
-            `SELECT id, username, display_name, online_status FROM users
+            `SELECT id, username, display_name, online_status, avatar_url FROM users
              WHERE online_status = 'online' AND is_incognito = 0
              ORDER BY display_name ASC LIMIT 50`
         );
