@@ -136,8 +136,26 @@ export function useMessages(
 
         socket.on('receive_message', handleReceiveMessage);
 
+        // Real-time edit/delete from the other participant
+        const handleMessageEdited = ({ id, content }: { id: number; content: string }) => {
+            setMessages((prev) => prev.map((m) =>
+                m.id === id ? { ...m, content, isEdited: true } : m
+            ));
+        };
+
+        const handleMessageDeleted = ({ id }: { id: number }) => {
+            setMessages((prev) => prev.map((m) =>
+                m.id === id ? { ...m, isDeleted: true, content: '' } : m
+            ));
+        };
+
+        socket.on('message_edited',  handleMessageEdited);
+        socket.on('message_deleted', handleMessageDeleted);
+
         return () => {
-            socket.off('receive_message', handleReceiveMessage);
+            socket.off('receive_message',  handleReceiveMessage);
+            socket.off('message_edited',   handleMessageEdited);
+            socket.off('message_deleted',  handleMessageDeleted);
         };
     }, [socket, senderId, receiverId]);
 

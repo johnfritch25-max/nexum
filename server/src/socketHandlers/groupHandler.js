@@ -14,13 +14,23 @@ function registerGroupHandlers(socket, io) {
         socket.join(`group_${groupId}`);
     });
 
+    // leave_group — leave the socket room for a group
+    socket.on('leave_group', ({ groupId } = {}) => {
+        if (typeof groupId !== 'number') return;
+        socket.leave(`group_${groupId}`);
+    });
+
     // notify_group_update — tell a specific user their group list changed
     socket.on('group_member_added', async ({ groupId, targetUserId } = {}) => {
         if (typeof groupId !== 'number' || typeof targetUserId !== 'number') return;
-        // Notify the added user to refresh their groups list
-        const { userSocketMap } = require('../index') ?? {};
-        // We emit directly to the group room — all members will refresh
-        io.to(`group_${groupId}`).emit('group_updated', { groupId });
+        const { getIo, getUserSocketMap } = require('../socketState');
+        const io = getIo();
+        const userSocketMap = getUserSocketMap();
+        if (io && userSocketMap) {
+            const targetSocketId = userSocketMap.get(targetUserId);
+            if (targetSocketId) io.to(targetSocketId).emit('group_updated', { groupId });
+        }
+        io && io.to(`group_${groupId}`).emit('group_updated', { groupId });
     });
 
     // send_group_message

@@ -222,7 +222,11 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     const handleEditSave = useCallback(async () => {
         if (!editingId || !editDraft.trim()) return;
         setEditLoading(true);
-        try { await editMessage(editingId, editDraft.trim()); }
+        try {
+            await editMessage(editingId, editDraft.trim());
+            // Optimistic update for sender (socket event handles the other side)
+            // The message_edited socket event will also fire back to us via the room
+        }
         catch (err) { console.error('[Edit]', err); }
         finally { setEditLoading(false); setEditingId(null); setEditDraft(''); }
     }, [editingId, editDraft]);
@@ -391,7 +395,7 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                 onPreviewRingtone={callSounds.previewCustomRingtone}
             />
             <CallOverlay {...webrtc} remoteName={callerName} />
-            <FriendPanel isOpen={friendPanelOpen} onClose={() => setFriendPanelOpen(false)} onFriendAdded={refreshFriends} currentUserId={userId} />
+            <FriendPanel isOpen={friendPanelOpen} onClose={() => setFriendPanelOpen(false)} onFriendAdded={refreshFriends} currentUserId={userId} socket={socket} />
             <ProfilePanel isOpen={profilePanelOpen} onClose={() => setProfilePanelOpen(false)} displayName={displayName} bio={bio} username={username} avatarUrl={avatarUrl} onSaved={(n, b, a) => {
                 setDisplayName(n); setBio(b); setAvatarUrl(a);
                 // Broadcast profile change to all online friends in real-time

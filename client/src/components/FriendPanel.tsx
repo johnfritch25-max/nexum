@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import type { Socket } from 'socket.io-client';
 import { searchUsers, type SearchUserResult } from '../api/users';
 import { sendFriendRequest, respondToFriendRequest, getPendingRequests, blockUser, unblockUser, type PendingRequest } from '../api/friends';
 import { useDraggable } from '../hooks/useDraggable';
@@ -8,9 +9,10 @@ interface FriendPanelProps {
     onClose:       () => void;
     onFriendAdded: () => void;
     currentUserId: number;
+    socket:        Socket | null;
 }
 
-export const FriendPanel: React.FC<FriendPanelProps> = ({ isOpen, onClose, onFriendAdded, currentUserId }) => {
+export const FriendPanel: React.FC<FriendPanelProps> = ({ isOpen, onClose, onFriendAdded, currentUserId, socket }) => {
     const [tab, setTab]                     = useState<'search' | 'requests'>('requests');
     const [query, setQuery]                 = useState('');
     const [searchResults, setSearchResults] = useState<SearchUserResult[]>([]);
@@ -22,17 +24,27 @@ export const FriendPanel: React.FC<FriendPanelProps> = ({ isOpen, onClose, onFri
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const inputRef    = useRef<HTMLInputElement>(null);
 
+    const refreshPending = useCallback(() => {
+        setLoadingReqs(true);
+        getPendingRequests().then(setPendingReqs).catch(() => setError('Failed to load requests.')).finally(() => setLoadingReqs(false));
+    }, []);
+
     useEffect(() => {
         if (isOpen && tab === 'search') setTimeout(() => inputRef.current?.focus(), 80);
     }, [isOpen, tab]);
 
     useEffect(() => {
         if (!isOpen || tab !== 'requests') return;
-        setLoadingReqs(true);
-        getPendingRequests().then(setPendingReqs).catch(() => setError('Failed to load requests.')).finally(() => setLoadingReqs(false));
-    }, [isOpen, tab]);
+        refreshPending();
+    }, [isOpen, tab, refreshPending]);
 
+    // Real-time: refresh pending requests when a new friend request arrives
     useEffect(() => {
+        if (!socket) return;
+        const handler = () => refreshPending();
+        socket.on('friend_request_received', handler);
+        return () => { socket.off('friend_request_received', handler); };
+    }, [socket, refreshPending]);
         if (debounceRef.current) clearTimeout(debounceRef.current);
         if (query.trim().length < 2) { setSearchResults([]); return; }
         debounceRef.current = setTimeout(async () => {

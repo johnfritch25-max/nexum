@@ -10,6 +10,7 @@
 const express      = require('express');
 const authenticate = require('../middleware/authenticate');
 const { pool }     = require('../db');
+const { getIo, getUserSocketMap } = require('../socketState');
 const router       = express.Router();
 router.use(authenticate);
 
@@ -75,6 +76,22 @@ router.post('/:id/members', async (req, res) => {
         const [[me]] = await pool.execute('SELECT id FROM group_members WHERE group_id = ? AND user_id = ? LIMIT 1', [groupId, userId]);
         if (!me) return res.status(403).json({ error: 'Not a member.' });
         await pool.execute('INSERT IGNORE INTO group_members (group_id, user_id) VALUES (?, ?)', [groupId, Number(targetId)]);
+
+        // Notify all group members (including the new one) to refresh their group list
+        const io = getIo();
+        const userSocketMap = getUserSocketMap();
+        if (io) {
+            // Notify the newly added user directly
+            if (userSocketMap) {
+                const newMemberSocketId = userSocketMap.get(Number(targetId));
+                if (newMemberSocketId) {
+                    io.to(newMemberSocketId).emit('group_updated', { groupId });
+                }
+            }
+            // Notify existing group members
+            io.to(`group_${groupId}`).emit('group_updated', { groupId });
+        }
+
         return res.json({ message: 'Member added.' });
     } catch (e) { console.error('[Groups] add member:', e); return res.status(500).json({ error: 'Internal server error.' }); }
 });
@@ -127,7 +144,10 @@ router.get('/:id/messages', async (req, res) => {
                 [groupId]
             );
         }
-        return res.json({ messages: rows.reverse(), hasMore: rows.length === limit, nextCursor: rows.length ? rows[0].created_at : null });
+        // Fix: capture cursor BEFORE reversing (oldest message = last in DESC order = first before reverse)
+        const hasMore = rows.length === limit;
+        const nextCursor = hasMore ? rows[rows.length - 1].created_at : null;
+        return res.json({ messages: rows.reverse(), hasMore, nextCursor });
     } catch (e) { console.error('[Groups] messages:', e); return res.status(500).json({ error: 'Internal server error.' }); }
 });
 

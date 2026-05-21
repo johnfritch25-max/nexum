@@ -1,21 +1,11 @@
 'use strict';
 
-/**
- * messages.js
- * REST routes for message history.
- *
- * GET /messages/:roomId        — paginated message history for a conversation
- * PATCH /messages/:messageId   — edit a message (sender only)
- * DELETE /messages/:messageId  — soft-delete a message (sender only)
- * PATCH /messages/:roomId/read — mark all unread messages in a room as read
- */
-
 const express      = require('express');
 const authenticate = require('../middleware/authenticate');
 const { pool }     = require('../db');
+const { getIo, getUserSocketMap } = require('../socketState');
 
 const router = express.Router();
-
 router.use(authenticate);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -141,7 +131,7 @@ router.patch('/:messageId', async (req, res) => {
     let message;
     try {
         const [rows] = await pool.execute(
-            'SELECT id, sender_id, is_deleted FROM messages WHERE id = ? LIMIT 1',
+            'SELECT id, sender_id, room_id, is_deleted FROM messages WHERE id = ? LIMIT 1',
             [messageId]
         );
 
@@ -177,6 +167,12 @@ router.patch('/:messageId', async (req, res) => {
         return res.status(500).json({ error: 'Internal server error.' });
     }
 
+    // Broadcast edit to both participants in the room
+    const io = getIo();
+    if (io && message.room_id) {
+        io.to(message.room_id).emit('message_edited', { id: messageId, content: content.trim() });
+    }
+
     return res.status(200).json({ message: 'Message updated.', id: messageId, content: content.trim() });
 });
 
@@ -197,7 +193,7 @@ router.delete('/:messageId', async (req, res) => {
     let message;
     try {
         const [rows] = await pool.execute(
-            'SELECT id, sender_id, is_deleted FROM messages WHERE id = ? LIMIT 1',
+            'SELECT id, sender_id, room_id, is_deleted FROM messages WHERE id = ? LIMIT 1',
             [messageId]
         );
 
@@ -231,6 +227,12 @@ router.delete('/:messageId', async (req, res) => {
     } catch (dbError) {
         console.error('[Messages] DELETE update error:', dbError);
         return res.status(500).json({ error: 'Internal server error.' });
+    }
+
+    // Broadcast deletion to both participants
+    const io = getIo();
+    if (io && message.room_id) {
+        io.to(message.room_id).emit('message_deleted', { id: messageId });
     }
 
     return res.status(200).json({ message: 'Message deleted.', id: messageId });

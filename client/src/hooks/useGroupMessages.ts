@@ -26,8 +26,23 @@ export function useGroupMessages(socket: Socket | null, groupId: number | null, 
             if (msg.group_id !== groupId) return;
             setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
         };
-        socket.on('group_message', handler);
-        return () => { socket.off('group_message', handler); };
+        // Refresh group list when a member is added/removed
+        const handleGroupUpdated = ({ groupId: gid }: { groupId: number }) => {
+            if (gid === groupId) {
+                // Re-fetch messages to stay in sync (group may have been updated)
+                getGroupMessages(groupId, 50)
+                    .then(({ messages: msgs }) => setMessages(msgs))
+                    .catch(() => {});
+            }
+        };
+        socket.on('group_message',  handler);
+        socket.on('group_updated',  handleGroupUpdated);
+        return () => {
+            socket.off('group_message',  handler);
+            socket.off('group_updated',  handleGroupUpdated);
+            // Leave the group room on cleanup
+            socket.emit('leave_group', { groupId });
+        };
     }, [socket, groupId]);
 
     const loadMore = useCallback(async () => {

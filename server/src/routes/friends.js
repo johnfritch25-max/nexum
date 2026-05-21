@@ -15,9 +15,9 @@
 const express      = require('express');
 const authenticate = require('../middleware/authenticate');
 const { pool }     = require('../db');
+const { getIo, getUserSocketMap } = require('../socketState');
 
 const router = express.Router();
-
 router.use(authenticate);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -90,6 +90,23 @@ router.post('/request', async (req, res) => {
         console.error('[Friends] Request insert error:', dbError);
         return res.status(500).json({ error: 'Internal server error.' });
     }
+
+    // Notify the target user in real-time if they're online
+    try {
+        const [[requester]] = await pool.execute('SELECT display_name FROM users WHERE id = ? LIMIT 1', [requesterId]);
+        const io = getIo();
+        const userSocketMap = getUserSocketMap();
+        if (io && userSocketMap && requester) {
+            const targetSocketId = userSocketMap.get(targetUserId);
+            if (targetSocketId) {
+                io.to(targetSocketId).emit('friend_request_received', {
+                    requesterId,
+                    requesterName: requester.display_name,
+                    friendshipId:  insertedId,
+                });
+            }
+        }
+    } catch { /* non-critical */ }
 
     return res.status(201).json({ message: 'Friend request sent.', friendshipId: insertedId });
 });

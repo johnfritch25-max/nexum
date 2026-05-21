@@ -19,6 +19,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 
 const { verifyConnection }         = require('./db');
+const socketState                  = require('./socketState');
 const { registerMessageHandlers }  = require('./socketHandlers/messageHandler');
 const { registerActivityHandlers } = require('./socketHandlers/activityHandler');
 const { registerPresenceHandlers, broadcastPresenceChange } = require('./socketHandlers/presenceHandler');
@@ -98,6 +99,10 @@ const io = new Server(httpServer, {
 // Maps a numeric DB user ID to the socket.id of their active connection.
 // For horizontal scaling, replace with a Redis adapter.
 const userSocketMap = new Map(); // Map<userId: number, socketId: string>
+
+// Share io and userSocketMap with routes/handlers via socketState singleton
+socketState.setIo(io);
+socketState.setUserSocketMap(userSocketMap);
 
 // ── Socket.io JWT middleware ──────────────────────────────────────────────────
 // Clients must pass their JWT as a handshake auth token:
