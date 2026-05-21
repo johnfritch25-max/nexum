@@ -45,6 +45,8 @@ export const FriendPanel: React.FC<FriendPanelProps> = ({ isOpen, onClose, onFri
         socket.on('friend_request_received', handler);
         return () => { socket.off('friend_request_received', handler); };
     }, [socket, refreshPending]);
+
+    useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         if (query.trim().length < 2) { setSearchResults([]); return; }
         debounceRef.current = setTimeout(async () => {
