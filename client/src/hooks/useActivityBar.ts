@@ -26,6 +26,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Socket } from 'socket.io-client';
 
+// Detect if running inside Tauri desktop app
+const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
 export interface ActivityInfo {
     name:       string;   // e.g. "Roblox"
     icon:       string;   // emoji
@@ -193,6 +196,27 @@ export function useActivityBar(
         manualOverride.current = false;
         setCurrentActivity(null);
     }, []);
+
+    // ── Tauri desktop: use real OS process scanner ────────────────────────────
+    useEffect(() => {
+        if (!IS_TAURI || !socket || !userId || isIncognito) return;
+
+        // Dynamically import to avoid crashing on web
+        let stopped = false;
+        import('../utils/processScanner').then(({ startProcessScanner, stopProcessScanner }) => {
+            if (stopped) return;
+            startProcessScanner(socket, userId, () => isIncognito, 5_000);
+            // Override setCurrentActivity with process scanner results via socket echo
+        }).catch(() => {});
+
+        return () => {
+            stopped = true;
+            import('../utils/processScanner').then(({ stopProcessScanner }) => {
+                stopProcessScanner();
+            }).catch(() => {});
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [IS_TAURI, socket, userId, isIncognito]);
 
     return { currentActivity, isAway, setActivity, clearActivity };
 }
