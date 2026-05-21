@@ -25,6 +25,7 @@ export interface Message {
     isDeleted: boolean;
     readAt: string | null;
     createdAt: string;
+    reactions?: { emoji: string; count: number; reactedByMe: boolean }[];
 }
 
 export interface UseMessagesReturn {
@@ -34,6 +35,7 @@ export interface UseMessagesReturn {
     loadMore: () => Promise<void>;
     sendMessage: (content: string) => void;
     sendImage: (dataUrl: string, mimeType: string) => void;
+    reactMessage: (messageId: number, emoji: string) => Promise<void>;
 }
 
 /** Converts a REST MessageRecord to the local Message shape. */
@@ -177,5 +179,37 @@ export function useMessages(
         [socket, senderId, receiverId]
     );
 
-    return { messages, isLoadingHistory, hasMore, loadMore, sendMessage, sendImage };
+    // ── React to message ──────────────────────────────────────────────────────
+    const reactMessage = useCallback(async (messageId: number, emoji: string) => {
+        const { reactToMessage } = await import('../api/messages');
+        await reactToMessage(messageId, emoji);
+        // Optimistic update — toggle/replace reaction locally
+        setMessages((prev) => prev.map((m) => {
+            if (m.id !== messageId) return m;
+            const existing = m.reactions ?? [];
+            const myOld = existing.find((r) => r.reactedByMe);
+            let next;
+            if (myOld) {
+                if (myOld.emoji === emoji) {
+                    // Remove
+                    next = existing.map((r) => r.emoji === emoji ? { ...r, count: r.count - 1, reactedByMe: false } : r).filter((r) => r.count > 0);
+                } else {
+                    // Replace
+                    next = existing
+                        .map((r) => r.emoji === myOld.emoji ? { ...r, count: r.count - 1, reactedByMe: false } : r)
+                        .filter((r) => r.count > 0);
+                    const existing2 = next.find((r) => r.emoji === emoji);
+                    if (existing2) { next = next.map((r) => r.emoji === emoji ? { ...r, count: r.count + 1, reactedByMe: true } : r); }
+                    else { next = [...next, { emoji, count: 1, reactedByMe: true }]; }
+                }
+            } else {
+                const ex = existing.find((r) => r.emoji === emoji);
+                if (ex) { next = existing.map((r) => r.emoji === emoji ? { ...r, count: r.count + 1, reactedByMe: true } : r); }
+                else { next = [...existing, { emoji, count: 1, reactedByMe: true }]; }
+            }
+            return { ...m, reactions: next };
+        }));
+    }, []);
+
+    return { messages, isLoadingHistory, hasMore, loadMore, sendMessage, sendImage, reactMessage };
 }

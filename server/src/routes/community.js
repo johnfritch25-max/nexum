@@ -164,14 +164,25 @@ router.post('/posts/:id/react', async (req, res) => {
     if (!ALLOWED_EMOJIS.includes(emoji)) return res.status(400).json({ error: 'Invalid emoji.' });
 
     try {
+        // Find any existing reaction by this user on this post (any emoji)
         const [[existing]] = await pool.execute(
-            'SELECT id FROM post_reactions WHERE post_id = ? AND user_id = ? AND emoji = ? LIMIT 1',
-            [postId, userId, emoji]
+            'SELECT id, emoji FROM post_reactions WHERE post_id = ? AND user_id = ? LIMIT 1',
+            [postId, userId]
         );
+
         if (existing) {
-            await pool.execute('DELETE FROM post_reactions WHERE id = ?', [existing.id]);
-            return res.json({ action: 'removed', emoji });
+            if (existing.emoji === emoji) {
+                // Same emoji — toggle off (remove)
+                await pool.execute('DELETE FROM post_reactions WHERE id = ?', [existing.id]);
+                return res.json({ action: 'removed', emoji });
+            } else {
+                // Different emoji — replace (update)
+                await pool.execute('UPDATE post_reactions SET emoji = ? WHERE id = ?', [emoji, existing.id]);
+                return res.json({ action: 'replaced', emoji, previous: existing.emoji });
+            }
         }
+
+        // No existing reaction — add new
         await pool.execute(
             'INSERT INTO post_reactions (post_id, user_id, emoji) VALUES (?, ?, ?)',
             [postId, userId, emoji]

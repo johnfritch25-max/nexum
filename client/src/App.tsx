@@ -105,7 +105,7 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [friendList.length]);
 
-    const { messages, isLoadingHistory, hasMore, loadMore, sendMessage, sendImage } = useMessages(socket, userId, activeFriendId);
+    const { messages, isLoadingHistory, hasMore, loadMore, sendMessage, sendImage, reactMessage } = useMessages(socket, userId, activeFriendId);
     const { friendIsTyping, onTyping, onSent } = useTyping(socket, userId, activeFriendId);
 
     const [draft, setDraft]       = useState('');
@@ -116,6 +116,9 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     const [editLoading, setEditLoading] = useState(false);
     const editInputRef = useRef<HTMLInputElement>(null);
     const [ctxMenu, setCtxMenu] = useState<{ msgId: number; x: number; y: number; isMine: boolean } | null>(null);
+    const [msgReactionPicker, setMsgReactionPicker] = useState<number | null>(null); // messageId showing picker
+
+    const MSG_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🔥'];
 
     const roomId = activeFriendId ? (userId < activeFriendId ? `${userId}_${activeFriendId}` : `${activeFriendId}_${userId}`) : null;
     useReadReceipts(roomId, messageListRef, messages.length);
@@ -550,15 +553,43 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                                                     <button type="button" onClick={() => { setEditingId(null); setEditDraft(''); }} className="h-8 px-2.5 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs transition-colors">✕</button>
                                                 </div>
                                             ) : (
-                                                <div className={[
-                                                    msg.messageType === 'image' && !msg.isDeleted ? 'rounded-2xl overflow-hidden shadow-message' : 'px-3.5 py-2 rounded-2xl text-sm shadow-message leading-relaxed',
-                                                    msg.isDeleted ? 'bg-zinc-800/60 text-zinc-500 italic border border-zinc-700/40 px-3.5 py-2'
-                                                        : msg.messageType === 'image' ? (isMine ? 'bg-gradient-to-br from-violet-600 to-violet-700 rounded-br-sm' : 'bg-zinc-800 rounded-bl-sm border border-zinc-700/30')
-                                                        : isMine ? 'bg-gradient-to-br from-violet-600 to-violet-700 text-white rounded-br-sm' : 'bg-zinc-800 text-zinc-100 rounded-bl-sm border border-zinc-700/30',
-                                                ].join(' ')}>
-                                                    {msg.isDeleted ? <p className="text-sm">Message deleted</p>
-                                                        : msg.messageType === 'image' ? <img src={msg.content} alt="Shared image" className="max-w-[240px] sm:max-w-[260px] max-h-[300px] sm:max-h-[320px] object-contain cursor-pointer block" onClick={() => window.open(msg.content, '_blank')} loading="lazy" />
-                                                        : <p className="break-words whitespace-pre-wrap">{msg.content}</p>}
+                                                <div className="relative group/bubble">
+                                                    {/* Reaction picker — appears on hover */}
+                                                    {!msg.isDeleted && (
+                                                        <div className={`absolute ${isMine ? 'right-full mr-1' : 'left-full ml-1'} top-0 z-20 hidden group-hover/bubble:flex items-center gap-0.5 bg-zinc-800/95 backdrop-blur-sm border border-zinc-700/60 rounded-full px-2 py-1 shadow-xl`}>
+                                                            {MSG_EMOJIS.map((em) => (
+                                                                <button key={em} type="button"
+                                                                    onClick={() => reactMessage(msg.id, em)}
+                                                                    aria-label={`React with ${em}`}
+                                                                    className="text-lg hover:scale-150 active:scale-125 transition-transform duration-150 p-0.5 rounded-full">
+                                                                    {em}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    <div className={[
+                                                        msg.messageType === 'image' && !msg.isDeleted ? 'rounded-2xl overflow-hidden shadow-message' : 'px-3.5 py-2 rounded-2xl text-sm shadow-message leading-relaxed',
+                                                        msg.isDeleted ? 'bg-zinc-800/60 text-zinc-500 italic border border-zinc-700/40 px-3.5 py-2'
+                                                            : msg.messageType === 'image' ? (isMine ? 'bg-gradient-to-br from-violet-600 to-violet-700 rounded-br-sm' : 'bg-zinc-800 rounded-bl-sm border border-zinc-700/30')
+                                                            : isMine ? 'bg-gradient-to-br from-violet-600 to-violet-700 text-white rounded-br-sm' : 'bg-zinc-800 text-zinc-100 rounded-bl-sm border border-zinc-700/30',
+                                                    ].join(' ')}>
+                                                        {msg.isDeleted ? <p className="text-sm">Message deleted</p>
+                                                            : msg.messageType === 'image' ? <img src={msg.content} alt="Shared image" className="max-w-[240px] sm:max-w-[260px] max-h-[300px] sm:max-h-[320px] object-contain cursor-pointer block" onClick={() => window.open(msg.content, '_blank')} loading="lazy" />
+                                                            : <p className="break-words whitespace-pre-wrap">{msg.content}</p>}
+                                                    </div>
+                                                    {/* Reaction counts on message */}
+                                                    {msg.reactions && msg.reactions.filter((r) => r.count > 0).length > 0 && (
+                                                        <div className={`flex flex-wrap gap-1 mt-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
+                                                            {msg.reactions.filter((r) => r.count > 0).map((r) => (
+                                                                <button key={r.emoji} type="button"
+                                                                    onClick={() => reactMessage(msg.id, r.emoji)}
+                                                                    className={['flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] border transition-all active:scale-95',
+                                                                        r.reactedByMe ? 'bg-violet-600/20 border-violet-500/50 text-violet-300' : 'bg-zinc-800 border-zinc-700/40 text-zinc-400 hover:border-zinc-600'].join(' ')}>
+                                                                    <span>{r.emoji}</span><span className="font-medium">{r.count}</span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-1 mt-0.5 px-1">
