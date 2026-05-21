@@ -11,6 +11,8 @@ import { CreateGroupModal }           from './components/CreateGroupModal';
 import { AboutModal }                 from './components/AboutModal';
 import { UserProfileModal }           from './components/UserProfileModal';
 import { ConfirmModal }               from './components/ConfirmModal';
+import { ActivityBar }                from './components/ActivityBar';
+import { useActivityBar }             from './hooks/useActivityBar';
 import { useAuth }                    from './hooks/useAuth';
 import { useSocket }                  from './hooks/useSocket';
 import { useIncognitoMode }           from './hooks/useIncognitoMode';
@@ -53,6 +55,7 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     const { friendActivity, isLoading: friendsLoading, friendProfiles, refresh: refreshFriends } = useFriendActivity(socket, userId);
     const webrtc                     = useWebRTC(socket, userId);
     const { canInstall, install }    = useInstallPrompt();
+    const activityBar                = useActivityBar(socket, userId, incognito.isIncognito);
 
     const [displayName, setDisplayName] = useState(initName);
     const [bio, setBio]                 = useState<string | null>(null);
@@ -250,6 +253,15 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                     );
                 })}
             </div>
+
+            {/* Activity bar */}
+            <ActivityBar
+                activity={activityBar.currentActivity}
+                onSetActivity={activityBar.setActivity}
+                onStream={() => webrtc.toggleScreenShare()}
+                isStreaming={webrtc.isScreenSharing}
+                callActive={webrtc.callStatus === 'connected'}
+            />
 
             {/* User panel */}
             <div className="h-14 shrink-0 border-t border-zinc-800/60 flex items-center gap-2.5 px-3">
