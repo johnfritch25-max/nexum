@@ -4,14 +4,16 @@ import { useCommunity, type Post, type Comment } from '../hooks/useCommunity';
 import { getOnlineUsers, type OnlineUser } from '../api/users';
 
 interface CommunityHubProps {
-    socket:      Socket | null;
-    userId:      number;
-    displayName: string;
+    socket:        Socket | null;
+    userId:        number;
+    displayName:   string;
+    avatarUrl?:    string | null;
+    onViewProfile: (userId: number) => void;
 }
 
 const EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🔥'];
 
-export const CommunityHub: React.FC<CommunityHubProps> = ({ socket, userId, displayName }) => {
+export const CommunityHub: React.FC<CommunityHubProps> = ({ socket, userId, displayName, avatarUrl, onViewProfile }) => {
     const hub = useCommunity(socket);
     const [postDraft, setPostDraft] = useState('');
     const [postImage, setPostImage] = useState<string | null>(null);
@@ -95,8 +97,10 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ socket, userId, disp
                     {/* Compose */}
                     <form onSubmit={handlePost} className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-3 sm:p-4 flex flex-col gap-3">
                         <div className="flex items-start gap-3">
-                            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-sm font-bold text-white shrink-0 mt-0.5">
-                                {displayName.charAt(0).toUpperCase()}
+                            <div className="h-9 w-9 rounded-full overflow-hidden bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-sm font-bold text-white shrink-0 mt-0.5">
+                                {avatarUrl
+                                    ? <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                                    : displayName.charAt(0).toUpperCase()}
                             </div>
                             <textarea value={postDraft} onChange={(e) => setPostDraft(e.target.value)}
                                 placeholder="What's on your mind?" maxLength={2000} rows={3}
@@ -172,7 +176,8 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ socket, userId, disp
                                     comments={hub.comments[post.id]}
                                     onReact={hub.toggleReaction} onDelete={hub.removePost}
                                     onLoadComments={hub.loadComments} onSubmitComment={hub.submitComment}
-                                    onDeleteComment={hub.removeComment} />
+                                    onDeleteComment={hub.removeComment}
+                                    onViewProfile={onViewProfile} />
                             ))}
                             {hub.hasMore && !searchQuery && (
                                 <button type="button" onClick={hub.loadMore} disabled={hub.isLoading}
@@ -225,9 +230,10 @@ interface PostCardProps {
     onLoadComments: (postId: number) => Promise<void>;
     onSubmitComment: (postId: number, content: string) => Promise<void>;
     onDeleteComment: (postId: number, commentId: number) => Promise<void>;
+    onViewProfile: (userId: number) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, userId, comments, onReact, onDelete, onLoadComments, onSubmitComment, onDeleteComment }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, userId, comments, onReact, onDelete, onLoadComments, onSubmitComment, onDeleteComment, onViewProfile }) => {
     const [showComments,  setShowComments]  = useState(false);
     const [commentDraft,  setCommentDraft]  = useState('');
     const [isCommenting,  setIsCommenting]  = useState(false);
@@ -261,11 +267,24 @@ const PostCard: React.FC<PostCardProps> = ({ post, userId, comments, onReact, on
         <article className="bg-zinc-900 border border-zinc-800/60 rounded-2xl overflow-hidden bubble-in">
             {/* Header */}
             <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center text-sm font-bold text-white shrink-0">
-                    {post.author_name.charAt(0).toUpperCase()}
-                </div>
+                <button
+                    type="button"
+                    onClick={() => onViewProfile(post.author_id)}
+                    aria-label={`View ${post.author_name}'s profile`}
+                    className="h-9 w-9 sm:h-10 sm:w-10 rounded-full overflow-hidden bg-gradient-to-br from-zinc-600 to-zinc-700 flex items-center justify-center text-sm font-bold text-white shrink-0 hover:ring-2 hover:ring-violet-400 transition-all active:scale-95"
+                >
+                    {post.author_avatar
+                        ? <img src={post.author_avatar} alt={post.author_name} className="w-full h-full object-cover" />
+                        : post.author_name.charAt(0).toUpperCase()}
+                </button>
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white leading-tight truncate">{post.author_name}</p>
+                    <button
+                        type="button"
+                        onClick={() => onViewProfile(post.author_id)}
+                        className="text-sm font-semibold text-white leading-tight truncate hover:underline text-left"
+                    >
+                        {post.author_name}
+                    </button>
                     <p className="text-[10px] text-zinc-500 leading-tight">@{post.author_username} · {timeAgo(post.created_at)}</p>
                 </div>
                 {post.author_id === userId && (
@@ -359,7 +378,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, userId, comments, onReact, on
                     ) : comments.length === 0 ? (
                         <p className="text-xs text-zinc-600 text-center py-2">No comments yet. Be the first!</p>
                     ) : comments.map((c) => (
-                        <CommentRow key={c.id} comment={c} userId={userId} postId={post.id} onDelete={onDeleteComment} />
+                        <CommentRow key={c.id} comment={c} userId={userId} postId={post.id} onDelete={onDeleteComment} onViewProfile={onViewProfile} />
                     ))}
                     <form onSubmit={handleComment} className="flex items-center gap-2 mt-1">
                         <input type="text" value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)}
@@ -376,7 +395,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, userId, comments, onReact, on
     );
 };
 
-const CommentRow: React.FC<{ comment: Comment; userId: number; postId: number; onDelete: (postId: number, commentId: number) => Promise<void>; }> = ({ comment, userId, postId, onDelete }) => {
+const CommentRow: React.FC<{ comment: Comment; userId: number; postId: number; onDelete: (postId: number, commentId: number) => Promise<void>; onViewProfile: (userId: number) => void; }> = ({ comment, userId, postId, onDelete, onViewProfile }) => {
     const timeAgo = (iso: string) => {
         const diff = Date.now() - new Date(iso).getTime();
         const m = Math.floor(diff / 60000);
@@ -386,12 +405,22 @@ const CommentRow: React.FC<{ comment: Comment; userId: number; postId: number; o
     };
     return (
         <div className="flex items-start gap-2 group">
-            <div className="h-7 w-7 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300 shrink-0 mt-0.5">
-                {comment.author_name.charAt(0).toUpperCase()}
-            </div>
+            <button
+                type="button"
+                onClick={() => onViewProfile(comment.author_id)}
+                aria-label={`View ${comment.author_name}'s profile`}
+                className="h-7 w-7 rounded-full overflow-hidden bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300 shrink-0 mt-0.5 hover:ring-2 hover:ring-violet-400 transition-all active:scale-95"
+            >
+                {comment.author_avatar
+                    ? <img src={comment.author_avatar} alt={comment.author_name} className="w-full h-full object-cover" />
+                    : comment.author_name.charAt(0).toUpperCase()}
+            </button>
             <div className="flex-1 min-w-0">
                 <div className="bg-zinc-800/60 rounded-xl px-3 py-2">
-                    <span className="text-xs font-semibold text-zinc-300 mr-1.5">{comment.author_name}</span>
+                    <button type="button" onClick={() => onViewProfile(comment.author_id)}
+                        className="text-xs font-semibold text-zinc-300 mr-1.5 hover:underline">
+                        {comment.author_name}
+                    </button>
                     <span className="text-xs text-zinc-200 break-words">{comment.content}</span>
                 </div>
                 <p className="text-[10px] text-zinc-600 mt-0.5 px-1">{timeAgo(comment.created_at)}</p>

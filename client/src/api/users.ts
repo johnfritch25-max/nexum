@@ -109,3 +109,10 @@ export async function getOnlineUsers(): Promise<OnlineUser[]> {
     if (!res.ok) throw new Error(data.error ?? 'Failed to fetch online users.');
     return data.users as OnlineUser[];
 }
+
+export async function getUserById(id: number): Promise<UserProfile> {
+    const res = await fetchWithAuth(`${BASE_URL}/users/${id}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? 'Failed to fetch user.');
+    return data as UserProfile;
+}

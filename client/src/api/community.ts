@@ -13,6 +13,7 @@ export interface Post {
     author_id: number;
     author_name: string;
     author_username: string;
+    author_avatar: string | null;
     content: string;
     image_url: string | null;
     is_deleted: boolean;
@@ -27,6 +28,7 @@ export interface Comment {
     author_id: number;
     author_name: string;
     author_username: string;
+    author_avatar: string | null;
     content: string;
     is_deleted: boolean;
     created_at: string;

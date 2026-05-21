@@ -31,7 +31,7 @@ import { useUnreadCounts }            from './hooks/useUnreadCounts';
 import { useNotifications }           from './hooks/useNotifications';
 import { useInstallPrompt }           from './hooks/useInstallPrompt';
 import { editMessage, deleteMessage } from './api/messages';
-import { getMe }                      from './api/users';
+import { getMe, getUserById }         from './api/users';
 import { getGroups, type Group }      from './api/groups';
 
 export default function App(): React.ReactElement {
@@ -81,6 +81,26 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     const [profilePanelOpen, setProfilePanelOpen] = useState(false);
     const [aboutOpen,        setAboutOpen]        = useState(false);
     const [viewingUserId,    setViewingUserId]    = useState<number | null>(null);
+    const [viewingProfile,   setViewingProfile]   = useState<import('./api/users').FriendSummary | null>(null);
+
+    // When viewingUserId changes, resolve the profile — use cache first, fetch if not a friend
+    useEffect(() => {
+        if (!viewingUserId) { setViewingProfile(null); return; }
+        const cached = friendProfiles.get(viewingUserId);
+        if (cached) { setViewingProfile(cached); return; }
+        getUserById(viewingUserId)
+            .then((p) => setViewingProfile({
+                id:                  p.id,
+                username:            p.username,
+                display_name:        p.display_name,
+                avatar_url:          p.avatar_url,
+                online_status:       p.online_status,
+                current_status_icon: p.current_status_icon,
+                current_status_text: p.current_status_text,
+                last_seen_at:        p.last_seen_at,
+            }))
+            .catch(() => setViewingProfile(null));
+    }, [viewingUserId, friendProfiles]);
 
     // Groups
     const [groups, setGroups]               = useState<Group[]>([]);
@@ -397,8 +417,8 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
             />
             <UserProfileModal
                 isOpen={viewingUserId !== null}
-                onClose={() => setViewingUserId(null)}
-                profile={viewingUserId ? (friendProfiles.get(viewingUserId) ?? null) : null}
+                onClose={() => { setViewingUserId(null); setViewingProfile(null); }}
+                profile={viewingProfile}
                 activity={viewingUserId ? (friendActivity.get(viewingUserId) ?? null) : null}
                 onMessage={() => { if (viewingUserId) { handleSelectFriend(viewingUserId); setViewingUserId(null); } }}
                 onVoiceCall={() => { if (viewingUserId) { webrtc.startCall(viewingUserId, 'voice'); setViewingUserId(null); } }}
@@ -515,7 +535,15 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                 )}
 
                 {/* Community view */}
-                {activeView === 'community' && <CommunityHub socket={socket} userId={userId} displayName={displayName} />}
+                {activeView === 'community' && (
+                    <CommunityHub
+                        socket={socket}
+                        userId={userId}
+                        displayName={displayName}
+                        avatarUrl={avatarUrl}
+                        onViewProfile={(uid) => setViewingUserId(uid)}
+                    />
+                )}
 
                 {/* Groups view */}
                 {activeView === 'groups' && (

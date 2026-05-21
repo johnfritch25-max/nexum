@@ -76,7 +76,7 @@ router.get('/posts', async (req, res) => {
             if (isNaN(d.getTime())) return res.status(400).json({ error: 'Invalid before timestamp.' });
             [rows] = await pool.query(
                 `SELECT p.id, p.author_id, p.content, p.image_url, p.is_deleted, p.created_at,
-                        u.display_name AS author_name, u.username AS author_username
+                        u.display_name AS author_name, u.username AS author_username, u.avatar_url AS author_avatar
                  FROM posts p JOIN users u ON u.id = p.author_id
                  WHERE p.is_deleted = 0 AND p.created_at < ?
                  ORDER BY p.created_at DESC LIMIT ${limit}`,
@@ -85,7 +85,7 @@ router.get('/posts', async (req, res) => {
         } else {
             [rows] = await pool.query(
                 `SELECT p.id, p.author_id, p.content, p.image_url, p.is_deleted, p.created_at,
-                        u.display_name AS author_name, u.username AS author_username
+                        u.display_name AS author_name, u.username AS author_username, u.avatar_url AS author_avatar
                  FROM posts p JOIN users u ON u.id = p.author_id
                  WHERE p.is_deleted = 0
                  ORDER BY p.created_at DESC LIMIT ${limit}`
@@ -123,7 +123,7 @@ router.post('/posts', async (req, res) => {
         );
         const [[post]] = await pool.execute(
             `SELECT p.id, p.author_id, p.content, p.image_url, p.is_deleted, p.created_at,
-                    u.display_name AS author_name, u.username AS author_username
+                    u.display_name AS author_name, u.username AS author_username, u.avatar_url AS author_avatar
              FROM posts p JOIN users u ON u.id = p.author_id WHERE p.id = ?`,
             [result.insertId]
         );
@@ -202,7 +202,7 @@ router.get('/posts/:id/comments', async (req, res) => {
     try {
         const [rows] = await pool.execute(
             `SELECT c.id, c.post_id, c.author_id, c.content, c.is_deleted, c.created_at,
-                    u.display_name AS author_name, u.username AS author_username
+                    u.display_name AS author_name, u.username AS author_username, u.avatar_url AS author_avatar
              FROM post_comments c JOIN users u ON u.id = c.author_id
              WHERE c.post_id = ? AND c.is_deleted = 0
              ORDER BY c.created_at ASC`,
@@ -234,7 +234,7 @@ router.post('/posts/:id/comments', async (req, res) => {
         );
         const [[comment]] = await pool.execute(
             `SELECT c.id, c.post_id, c.author_id, c.content, c.is_deleted, c.created_at,
-                    u.display_name AS author_name, u.username AS author_username
+                    u.display_name AS author_name, u.username AS author_username, u.avatar_url AS author_avatar
              FROM post_comments c JOIN users u ON u.id = c.author_id WHERE c.id = ?`,
             [result.insertId]
         );

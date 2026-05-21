@@ -258,8 +258,28 @@ router.patch('/me', async (req, res) => {
     return res.status(200).json({ message: 'Profile updated successfully.' });
 });
 
-// ── GET /users/me/friends ────────────────────────────────────────────────────
+// ── GET /users/:id — public profile (for community) ─────────────────────────
+router.get('/:id', async (req, res) => {
+    const targetId = parseInt(req.params.id, 10);
+    if (isNaN(targetId) || targetId <= 0) return res.status(400).json({ error: 'Invalid user id.' });
+    try {
+        const [rows] = await pool.execute(
+            `SELECT id, username, display_name, avatar_url, bio, online_status,
+                    CASE WHEN is_incognito = 1 THEN NULL ELSE current_status_icon END AS current_status_icon,
+                    CASE WHEN is_incognito = 1 THEN NULL ELSE current_status_text END AS current_status_text,
+                    last_seen_at, created_at
+             FROM users WHERE id = ? LIMIT 1`,
+            [targetId]
+        );
+        if (!rows.length) return res.status(404).json({ error: 'User not found.' });
+        return res.json(rows[0]);
+    } catch (e) {
+        console.error('[Users] GET /:id:', e);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
 
+// ── GET /users/me/friends ────────────────────────────────────────────────────
 /**
  * Returns the authenticated user's accepted friends with their live status.
  * Activity fields are masked to null for friends who have incognito enabled.
