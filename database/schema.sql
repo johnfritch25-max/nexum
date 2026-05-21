@@ -51,7 +51,7 @@ CREATE TABLE `users` (
     -- bcrypt hash (cost 12) — never store plaintext passwords
     `password_hash`         CHAR(60)            NOT NULL,
 
-    `avatar_url`            VARCHAR(512)        NULL DEFAULT NULL,
+    `avatar_url`            MEDIUMTEXT          NULL DEFAULT NULL,
     `bio`                   VARCHAR(300)        NULL DEFAULT NULL,
 
     `online_status`         ENUM(

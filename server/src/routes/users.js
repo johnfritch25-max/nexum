@@ -231,8 +231,8 @@ router.patch('/me', async (req, res) => {
     }
 
     if (avatar_url !== undefined) {
-        if (avatar_url !== null && (typeof avatar_url !== 'string' || avatar_url.length > 512)) {
-            return res.status(400).json({ error: 'avatar_url must be a string of at most 512 characters, or null.' });
+        if (avatar_url !== null && (typeof avatar_url !== 'string' || avatar_url.length > 2097152)) {
+            return res.status(400).json({ error: 'avatar_url must be a string of at most 2 MB, or null.' });
         }
         updates.push('avatar_url = ?');
         values.push(avatar_url);
