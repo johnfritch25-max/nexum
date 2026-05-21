@@ -12,7 +12,11 @@ import { AboutModal }                 from './components/AboutModal';
 import { UserProfileModal }           from './components/UserProfileModal';
 import { ConfirmModal }               from './components/ConfirmModal';
 import { ActivityBar }                from './components/ActivityBar';
+import { ToastContainer }             from './components/ToastNotification';
+import { SoundSettingsModal }         from './components/SoundSettingsModal';
 import { useActivityBar }             from './hooks/useActivityBar';
+import { useNotificationSound }       from './hooks/useNotificationSound';
+import { useToastNotifications }      from './hooks/useToastNotifications';
 import { useAuth }                    from './hooks/useAuth';
 import { useSocket }                  from './hooks/useSocket';
 import { useIncognitoMode }           from './hooks/useIncognitoMode';
@@ -56,6 +60,9 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
     const webrtc                     = useWebRTC(socket, userId);
     const { canInstall, install }    = useInstallPrompt();
     const activityBar                = useActivityBar(socket, userId, incognito.isIncognito);
+    const notifSound                 = useNotificationSound();
+    const toasts                     = useToastNotifications();
+    const [soundSettingsOpen, setSoundSettingsOpen] = useState(false);
 
     const [displayName, setDisplayName] = useState(initName);
     const [bio, setBio]                 = useState<string | null>(null);
@@ -146,6 +153,49 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
         messageType: latestMsg.messageType,
     } : undefined;
     useNotifications(totalUnread, latestForNotif);
+
+    // In-app toast + sound for new messages
+    const prevMsgCountRef = useRef(0);
+    useEffect(() => {
+        const count = messages.length;
+        if (count > prevMsgCountRef.current && prevMsgCountRef.current > 0) {
+            const newest = messages[count - 1];
+            if (newest && newest.senderId !== userId) {
+                const body = newest.messageType === 'image' ? '📷 Sent an image' : newest.content.slice(0, 80);
+                toasts.addToast('message', activeFriendName || 'New message', body, activeFriendName.charAt(0).toUpperCase());
+                notifSound.playNotification();
+            }
+        }
+        prevMsgCountRef.current = count;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [messages.length]);
+
+    // Toast + sound for friend requests via socket
+    useEffect(() => {
+        if (!socket) return;
+        const onFriendRequest = (payload: { requesterName?: string; requesterId?: number }) => {
+            const name = payload.requesterName ?? `User ${payload.requesterId ?? '?'}`;
+            toasts.addToast('friend_request', 'Friend Request', `${name} wants to be your friend!`, name.charAt(0).toUpperCase());
+            notifSound.playNotification();
+        };
+        socket.on('friend_request_received', onFriendRequest);
+        return () => { socket.off('friend_request_received', onFriendRequest); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [socket]);
+
+    // Toast + sound for community reactions via socket
+    useEffect(() => {
+        if (!socket) return;
+        const onReaction = (payload: { reactorName?: string; emoji?: string; postContent?: string }) => {
+            const name  = payload.reactorName ?? 'Someone';
+            const emoji = payload.emoji ?? '❤️';
+            toasts.addToast('reaction', 'Post Reaction', `${name} reacted ${emoji} to your post`, name.charAt(0).toUpperCase());
+            notifSound.playNotification();
+        };
+        socket.on('community:post_reacted_to_me', onReaction);
+        return () => { socket.off('community:post_reacted_to_me', onReaction); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [socket]);
 
     const handleEditSave = useCallback(async () => {
         if (!editingId || !editDraft.trim()) return;
@@ -285,12 +335,26 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
                     </svg>
                 </button>
-            </div>
+                <button type="button" onClick={() => setSoundSettingsOpen(true)} aria-label="Notification sound settings" title="Notification sounds"
+                    className="shrink-0 h-7 w-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-700 transition-colors">
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z" />
+                        <path d="M5.5 9.643a.75.75 0 00-1.5 0V10c0 3.06 2.29 5.585 5.25 5.954V17.5h-1.5a.75.75 0 000 1.5h4.5a.75.75 0 000-1.5H10.5v-1.546A6.001 6.001 0 0016 10v-.357a.75.75 0 00-1.5 0V10a4.5 4.5 0 01-9 0v-.357z" />
+                    </svg>
+                </button>            </div>
         </>
     );
 
     return (
         <>
+            <ToastContainer toasts={toasts.toasts} onDismiss={toasts.dismissToast} />
+            <SoundSettingsModal
+                isOpen={soundSettingsOpen}
+                onClose={() => setSoundSettingsOpen(false)}
+                selectedSound={notifSound.selectedSound}
+                onSelect={notifSound.setSound}
+                onPreview={notifSound.playPreview}
+            />
             <CallOverlay {...webrtc} remoteName={callerName} />
             <FriendPanel isOpen={friendPanelOpen} onClose={() => setFriendPanelOpen(false)} onFriendAdded={refreshFriends} currentUserId={userId} />
             <ProfilePanel isOpen={profilePanelOpen} onClose={() => setProfilePanelOpen(false)} displayName={displayName} bio={bio} username={username} onSaved={(n, b) => { setDisplayName(n); setBio(b); }} />
