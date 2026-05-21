@@ -115,14 +115,35 @@ export function useFriendActivity(
             });
         };
 
+        // Real-time profile update (display name + avatar) from a friend
+        const handleProfileUpdate = (payload: {
+            userId:      number;
+            displayName: string | null;
+            avatarUrl:   string | null;
+            updatedAt:   string;
+        }) => {
+            setFriendProfiles((prev) => {
+                const next     = new Map(prev);
+                const existing = next.get(payload.userId);
+                if (!existing) return prev;
+                next.set(payload.userId, {
+                    ...existing,
+                    display_name: payload.displayName ?? existing.display_name,
+                    avatar_url:   payload.avatarUrl !== undefined ? payload.avatarUrl : existing.avatar_url,
+                });
+                return next;
+            });
+        };
+
         socket.on('friend_activity_updated', handleActivityUpdate);
         socket.on('friend_presence_updated', handlePresenceUpdate);
+        socket.on('friend_profile_updated',  handleProfileUpdate);
 
         return () => {
             socket.off('friend_activity_updated', handleActivityUpdate);
             socket.off('friend_presence_updated', handlePresenceUpdate);
-        };
-    }, [socket]);
+            socket.off('friend_profile_updated',  handleProfileUpdate);
+        };    }, [socket]);
 
     return { friendActivity, friendProfiles, isLoading, refresh };
 }

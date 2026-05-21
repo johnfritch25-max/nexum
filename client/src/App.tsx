@@ -368,7 +368,11 @@ function MessengerShell({ userId, displayName: initName, username, onLogout }: S
             />
             <CallOverlay {...webrtc} remoteName={callerName} />
             <FriendPanel isOpen={friendPanelOpen} onClose={() => setFriendPanelOpen(false)} onFriendAdded={refreshFriends} currentUserId={userId} />
-            <ProfilePanel isOpen={profilePanelOpen} onClose={() => setProfilePanelOpen(false)} displayName={displayName} bio={bio} username={username} avatarUrl={avatarUrl} onSaved={(n, b, a) => { setDisplayName(n); setBio(b); setAvatarUrl(a); }} />
+            <ProfilePanel isOpen={profilePanelOpen} onClose={() => setProfilePanelOpen(false)} displayName={displayName} bio={bio} username={username} avatarUrl={avatarUrl} onSaved={(n, b, a) => {
+                setDisplayName(n); setBio(b); setAvatarUrl(a);
+                // Broadcast profile change to all online friends in real-time
+                socket?.emit('profile_updated', { userId, displayName: n, avatarUrl: a });
+            }} />
             <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
             <ConfirmModal
                 isOpen={confirmDelete !== null}
