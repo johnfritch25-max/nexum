@@ -5,7 +5,8 @@ interface CallOverlayProps extends UseWebRTCReturn { remoteName: string; }
 
 export const CallOverlay: React.FC<CallOverlayProps> = ({
     callStatus, callType, localStream, remoteStream, remoteName,
-    acceptCall, rejectCall, endCall, toggleMute, toggleCamera, isMuted, isCameraOff,
+    acceptCall, rejectCall, endCall, toggleMute, toggleCamera, toggleScreenShare,
+    isMuted, isCameraOff, isScreenSharing,
 }) => {
     const localVideoRef  = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -74,7 +75,8 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
             {/* Connected — Video */}
             {callStatus === 'connected' && !isVoice && (
                 <div className="w-full h-full flex flex-col gap-3 sm:gap-4 animate-fade-in sm:max-w-3xl sm:mx-auto">
-                    <div className="relative w-full flex-1 sm:flex-none sm:aspect-video bg-zinc-900 rounded-none sm:rounded-xl overflow-hidden border-0 sm:border sm:border-zinc-800 shadow-2xl">
+                    <div className={['relative w-full flex-1 sm:flex-none sm:aspect-video bg-zinc-900 rounded-none sm:rounded-xl overflow-hidden border-0 shadow-2xl transition-all',
+                        isScreenSharing ? 'sm:border-2 sm:border-green-500' : 'sm:border sm:border-zinc-800'].join(' ')}>
                         <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" aria-label={`${remoteName}'s video`} />
                         {!remoteStream && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
@@ -85,12 +87,24 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                         <div className="absolute top-3 left-3 px-2 py-0.5 rounded-lg bg-black/50 backdrop-blur-sm text-xs text-white font-medium">
                             {remoteName}
                         </div>
+                        {/* Screen share badge */}
+                        {isScreenSharing && (
+                            <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-600/90 backdrop-blur-sm text-xs text-white font-semibold shadow-lg">
+                                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                                Sharing screen
+                            </div>
+                        )}
                         {/* Local PiP */}
                         <div className="absolute bottom-3 right-3 w-28 sm:w-36 aspect-video bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 shadow-xl">
                             <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" aria-label="Your video" />
-                            {isCameraOff && (
+                            {isCameraOff && !isScreenSharing && (
                                 <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
                                     <span className="text-zinc-500 text-[10px]">Camera off</span>
+                                </div>
+                            )}
+                            {isScreenSharing && (
+                                <div className="absolute bottom-1 left-1 right-1 flex items-center justify-center">
+                                    <span className="text-[9px] text-green-400 font-medium bg-black/60 rounded px-1">Your screen</span>
                                 </div>
                             )}
                         </div>
@@ -98,6 +112,9 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                     <div className="flex items-center justify-center gap-3 sm:gap-4 py-2 sm:py-0 shrink-0">
                         <ControlBtn onClick={toggleMute} label={isMuted ? 'Unmute' : 'Mute'} active={isMuted}>
                             {isMuted ? <MicOffIcon /> : <MicIcon />}
+                        </ControlBtn>
+                        <ControlBtn onClick={toggleScreenShare} label={isScreenSharing ? 'Stop share' : 'Share screen'} active={isScreenSharing} activeColor="green">
+                            <ScreenShareIcon />
                         </ControlBtn>
                         <button type="button" onClick={endCall} aria-label="End call"
                             className="h-14 w-14 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg">
@@ -117,14 +134,35 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                     {avatar('h-24 w-24 sm:h-28 sm:w-28 text-3xl sm:text-4xl')}
                     <div className="text-center">
                         <p className="text-white text-xl sm:text-2xl font-semibold">{remoteName}</p>
-                        <p className="text-zinc-400 text-sm mt-1">Voice call in progress</p>
+                        <p className="text-zinc-400 text-sm mt-1">
+                            {isScreenSharing ? (
+                                <span className="flex items-center justify-center gap-1.5 text-green-400">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                                    Sharing screen
+                                </span>
+                            ) : 'Voice call in progress'}
+                        </p>
                     </div>
-                    <div className="flex items-end gap-1 h-8" aria-hidden="true">
-                        {[0,1,2,3,4].map((i) => <div key={i} className="voice-wave-bar w-1.5 rounded-full bg-violet-500 h-full" />)}
-                    </div>
+                    {!isScreenSharing && (
+                        <div className="flex items-end gap-1 h-8" aria-hidden="true">
+                            {[0,1,2,3,4].map((i) => <div key={i} className="voice-wave-bar w-1.5 rounded-full bg-violet-500 h-full" />)}
+                        </div>
+                    )}
+                    {/* Screen preview when sharing during voice call */}
+                    {isScreenSharing && localStream && (
+                        <div className="w-64 sm:w-80 aspect-video bg-zinc-900 rounded-xl overflow-hidden border-2 border-green-500 shadow-xl">
+                            <video autoPlay playsInline muted
+                                ref={(el) => { if (el && localStream) el.srcObject = localStream; }}
+                                className="w-full h-full object-contain"
+                                aria-label="Your screen share preview" />
+                        </div>
+                    )}
                     <div className="flex items-center gap-4 mt-2">
                         <ControlBtn onClick={toggleMute} label={isMuted ? 'Unmute' : 'Mute'} active={isMuted}>
                             {isMuted ? <MicOffIcon /> : <MicIcon />}
+                        </ControlBtn>
+                        <ControlBtn onClick={toggleScreenShare} label={isScreenSharing ? 'Stop share' : 'Share screen'} active={isScreenSharing} activeColor="green">
+                            <ScreenShareIcon />
                         </ControlBtn>
                         <button type="button" onClick={endCall} aria-label="End call"
                             className="h-14 w-14 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg">
@@ -146,11 +184,13 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
     );
 };
 
-const ControlBtn: React.FC<{ onClick: () => void; label: string; active: boolean; children: React.ReactNode; }> = ({ onClick, label, active, children }) => (
+const ControlBtn: React.FC<{ onClick: () => void; label: string; active: boolean; activeColor?: 'red' | 'green'; children: React.ReactNode; }> = ({ onClick, label, active, activeColor = 'red', children }) => (
     <div className="flex flex-col items-center gap-1.5">
         <button type="button" onClick={onClick} aria-label={label}
             className={['h-12 w-12 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500',
-                active ? 'bg-red-700 hover:bg-red-600' : 'bg-zinc-700/80 hover:bg-zinc-600'].join(' ')}>
+                active
+                    ? activeColor === 'green' ? 'bg-green-700 hover:bg-green-600' : 'bg-red-700 hover:bg-red-600'
+                    : 'bg-zinc-700/80 hover:bg-zinc-600'].join(' ')}>
             {children}
         </button>
         <span className="text-[10px] text-zinc-500">{label}</span>
@@ -163,5 +203,6 @@ const MicIcon      = () => <svg aria-hidden="true" xmlns="http://www.w3.org/2000
 const MicOffIcon   = () => <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-white"><path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-2.572-2.573a6.745 6.745 0 001.042-3.457v-1.5a.75.75 0 00-1.5 0v1.5c0 .93-.196 1.813-.543 2.612L15.53 16.47A3.75 3.75 0 0112 12.75a3.72 3.72 0 01-.177-1.133L8.53 8.324A3.75 3.75 0 008.25 9.75v3a3.75 3.75 0 005.85 3.096l1.178 1.178A5.25 5.25 0 016.75 12.75v-1.5a.75.75 0 00-1.5 0v1.5a6.751 6.751 0 006 6.709v2.291h-3a.75.75 0 000 1.5h7.5a.75.75 0 000-1.5h-3v-2.291a6.712 6.712 0 001.687-.517l-1.116-1.116A5.25 5.25 0 016.75 12.75v-1.5a.75.75 0 00-1.5 0v1.5zM12 3a3.75 3.75 0 00-3.75 3.75v.443l7.107 7.107A3.75 3.75 0 0015.75 12V6.75A3.75 3.75 0 0012 3z" /></svg>;
 const VideoIcon    = () => <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-white"><path d="M4.5 4.5a3 3 0 00-3 3v9a3 3 0 003 3h8.25a3 3 0 003-3v-9a3 3 0 00-3-3H4.5zM19.94 18.75l-2.69-2.69V7.94l2.69-2.69c.944-.945 2.56-.276 2.56 1.06v11.38c0 1.336-1.616 2.005-2.56 1.06z" /></svg>;
 const VideoOffIcon = () => <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-white"><path d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM22.5 17.69c0 .471-.202.86-.504 1.124l-4.746-4.746V7.939l2.69-2.689c.944-.945 2.56-.276 2.56 1.06v11.38zM15.75 7.5v5.068L7.682 4.5h5.068a3 3 0 013 3zM1.5 7.5c0-.782.299-1.494.785-2.028L12 15.787V16.5a3 3 0 01-3 3H4.5a3 3 0 01-3-3v-9z" /></svg>;
+const ScreenShareIcon = () => <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-white"><path fillRule="evenodd" d="M2.25 5.25a3 3 0 013-3h13.5a3 3 0 013 3V15a3 3 0 01-3 3h-3v.257c0 .597.237 1.17.659 1.591l.621.622a.75.75 0 01-.53 1.28h-9a.75.75 0 01-.53-1.28l.621-.622a2.25 2.25 0 00.659-1.59V18h-3a3 3 0 01-3-3V5.25zm1.5 0v9.75c0 .83.672 1.5 1.5 1.5h13.5c.828 0 1.5-.67 1.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5z" clipRule="evenodd" /></svg>;
 
 export default CallOverlay;
