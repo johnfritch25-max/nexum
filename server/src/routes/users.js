@@ -34,7 +34,7 @@ router.use(authenticate);
  * Body: { is_incognito: boolean }
  */
 router.patch('/me/incognito', async (req, res) => {
-    const userId     = req.user.sub;
+    const userId     = Number(req.user.sub);
     const { is_incognito } = req.body ?? {};
 
     if (typeof is_incognito !== 'boolean') {

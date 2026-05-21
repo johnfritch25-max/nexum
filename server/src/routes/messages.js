@@ -121,7 +121,7 @@ router.get('/:roomId', async (req, res) => {
  * Body: { content: string }
  */
 router.patch('/:messageId', async (req, res) => {
-    const userId    = req.user.sub;
+    const userId    = Number(req.user.sub);
     const messageId = parseInt(req.params.messageId, 10);
     const { content } = req.body ?? {};
 
@@ -187,7 +187,7 @@ router.patch('/:messageId', async (req, res) => {
  * The row is kept in the DB; clients should render "Message deleted" in its place.
  */
 router.delete('/:messageId', async (req, res) => {
-    const userId    = req.user.sub;
+    const userId    = Number(req.user.sub);
     const messageId = parseInt(req.params.messageId, 10);
 
     if (isNaN(messageId) || messageId <= 0) {
@@ -278,7 +278,7 @@ router.patch('/:roomId/read', async (req, res) => {
  * Body: { emoji: string }
  */
 router.post('/:messageId/react', async (req, res) => {
-    const userId    = req.user.sub;
+    const userId    = Number(req.user.sub);
     const messageId = parseInt(req.params.messageId, 10);
     const { emoji = '❤️' } = req.body ?? {};
     const ALLOWED = ['❤️','👍','😂','😮','😢','🔥','👎'];
@@ -300,7 +300,7 @@ router.post('/:messageId/react', async (req, res) => {
 
 // ── GET /messages/:messageId/reactions ───────────────────────────────────────
 router.get('/:messageId/reactions', async (req, res) => {
-    const userId    = req.user.sub;
+    const userId    = Number(req.user.sub);
     const messageId = parseInt(req.params.messageId, 10);
     if (isNaN(messageId)) return res.status(400).json({ error: 'Invalid messageId.' });
     try {

@@ -36,7 +36,7 @@ function canonicalPair(idA, idB) {
  * Body: { targetUserId: number }
  */
 router.post('/request', async (req, res) => {
-    const requesterId  = req.user.sub;
+    const requesterId  = Number(req.user.sub);
     const { targetUserId } = req.body ?? {};
 
     if (typeof targetUserId !== 'number' || targetUserId <= 0) {
@@ -102,7 +102,7 @@ router.post('/request', async (req, res) => {
  * Body: { action: 'accept' | 'decline' }
  */
 router.patch('/request/:id', async (req, res) => {
-    const userId       = req.user.sub;
+    const userId       = Number(req.user.sub);
     const friendshipId = parseInt(req.params.id, 10);
     const { action }   = req.body ?? {};
 
@@ -177,7 +177,7 @@ router.patch('/request/:id', async (req, res) => {
  * The requester may cancel their own pending request.
  */
 router.delete('/:id', async (req, res) => {
-    const userId       = req.user.sub;
+    const userId       = Number(req.user.sub);
     const friendshipId = parseInt(req.params.id, 10);
 
     if (isNaN(friendshipId) || friendshipId <= 0) {
@@ -226,7 +226,7 @@ router.delete('/:id', async (req, res) => {
  * Blocks a user. Overwrites any existing pending/accepted relationship.
  */
 router.post('/block/:userId', async (req, res) => {
-    const blockerId  = req.user.sub;
+    const blockerId  = Number(req.user.sub);
     const blockedId  = parseInt(req.params.userId, 10);
 
     if (isNaN(blockedId) || blockedId <= 0) {
@@ -264,7 +264,7 @@ router.post('/block/:userId', async (req, res) => {
  * Unblocks a user. Only the user who initiated the block may unblock.
  */
 router.delete('/block/:userId', async (req, res) => {
-    const blockerId = req.user.sub;
+    const blockerId = Number(req.user.sub);
     const blockedId = parseInt(req.params.userId, 10);
 
     if (isNaN(blockedId) || blockedId <= 0) {
